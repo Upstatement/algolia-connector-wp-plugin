@@ -1,0 +1,255 @@
+<?php
+/**
+ * Serialization logic for Algolia records
+ */
+
+define('THEME_PATH', get_stylesheet_directory() . '/');
+
+class AlgoliaSerializer {
+    /**
+     * Runs initialization tasks.
+     *
+     * @return void
+     */
+    public function run() {
+        // Bail early if Algolia plugin is not activated.
+        if (!function_exists('getAlgoliaIndexName')) {
+            return;
+        }
+
+        add_filter('timber/context', array($this, 'addConfigToContext'));
+
+        add_filter('page_to_records', array($this, 'page_to_records'));
+        add_filter('post_to_records', array($this, 'post_to_records'));
+        // Demo filter for for custom post type
+        add_filter('monkey_to_records', array($this, 'monkey_to_records'));
+
+        add_filter('algolia_get_settings', array($this, 'algolia_get_settings'));
+        add_filter('algolia_get_synonyms', array($this, 'algolia_get_synonyms'));
+        add_filter('algolia_get_rules', array($this, 'algolia_get_rules'));
+    }
+
+    /**
+     * Pass Algolia environment variables to Timber context
+     *
+     * @param array $context Timber context
+     *
+     * @return array
+     */
+    function addAlgoliaConfigToContext($context)
+    {
+        $context['ALGOLIA_APPLICATION_ID'] = getenv('ALGOLIA_APPLICATION_ID');
+        $context['ALGOLIA_SEARCH_ONLY_API_KEY'] = getenv('ALGOLIA_SEARCH_ONLY_API_KEY');
+        $context['ALGOLIA_INDEX_PREFIX'] = getAlgoliaIndexName();
+        return $context;
+    }
+
+    /**
+     * Get default attributes for each Algolia record
+     *
+     * @param object $post    Post to get record of
+     * @param object $blog_id ID of current blog
+     *
+     * @return array
+     */
+    function getDefaultRecordAttributes($post, $blog_id) {
+        return [
+            'objectID' => implode('#', [$blog_id, $post->post_type, $post->ID]),
+            'distinct_key' => implode('#', [$blog_id, $post->post_type, $post->ID]),
+            'blog_id' => $blog_id,
+            'type' => $post->post_type,
+            'title' => $post->post_title,
+            'date' => $post->post_date,
+            'url' => get_permalink($post->ID),
+        ];
+    }
+
+    /**
+     * Maps the given post taxonomy terms to the term names
+     *
+     * @param object $post     Post to get the terms of
+     * @param string $taxonomy Name of taxonomy
+     *
+     * @return array
+     */
+    function getTermNames($post, $taxonomy) {
+        $terms = wp_get_post_terms($post->ID, $taxonomy);
+
+        if (!is_array($terms)) {
+            return [];
+        }
+
+        return array_map(
+            function ($term) {
+                return $term->name;
+            },
+            $terms
+        );
+    }
+
+    /**
+     * Split the content into separate records
+     *
+     * @param string $attr_name Name of attribute to split
+     * @param string $content   Content to split
+     *
+     * @return array
+     */
+    function splitContent($attr_name, $content) {
+        $char_limit = 1000;
+
+        // Split content into 1000 char chunks
+        $split_content = str_split(strip_tags($content), $char_limit);
+        // Map each content chunk to a record array
+        $content_records = array_map(
+            function ($val) use ($attr_name) {
+                return array($attr_name => $val);
+            }, $split_content
+        );
+
+        // Sanitize data to support non UTF-8 content
+        // https://github.com/algolia/algoliasearch-wordpress/issues/377
+        if (function_exists('_wp_json_sanity_check')) {
+            return _wp_json_sanity_check($content_records, 512);
+        }
+
+        return $content_records;
+    }
+
+    /**
+     * Get records for the given post
+     *
+     * @param object $post          Post to get records for
+     * @param array  $post_attrs    Post-specific record attributes
+     * @param bool   $split_content Whether or not to split the post content
+     *
+     * @return array
+     */
+    function getRecordsForPost($post, $post_attrs = []) {
+        $blog_id = get_current_blog_id();
+        $records = [];
+
+        // Split records on post_content
+        $records = $this->splitContent('content', $post->post_content);
+
+        // Merge all attributes for each split record and add a unique objectID
+        foreach ($records as $key => $split) {
+            $records[$key] = array_merge(
+                $this->getDefaultRecordAttributes($post, $blog_id),
+                $post_attrs,
+                $split,
+                ['objectID' => implode('-', [$blog_id, $post->post_type, $post->ID, $key])]
+            );
+        };
+
+        return $records;
+    }
+
+    /**
+     * Converts a Page to a list of Algolia records
+     *
+     * @param object $post Post to get record of
+     *
+     * @return array
+     */
+    function page_to_records($post) {
+        return $this->getRecordsForPost($post, []);
+    }
+
+    /**
+     * Converts a Post to an Algolia record
+     *
+     * @param object $post Post to get record of
+     *
+     * @return array
+     */
+    function post_to_records($post) {
+        $tags = $this->getTermNames($post, 'post_tag');
+
+        $post_record_attrs = [
+            // 'introduction' => get_field('introduction', $post->ID),
+            'tags' => $tags,
+        ];
+
+        return $this->getRecordsForPost($post, $post_record_attrs);
+    }
+
+    /**
+     * DEMO: Converts a Monkey type post to an Algolia record
+     *
+     * @param object $post Post to get record of
+     *
+     * @return array
+     */
+    function monkey_to_records($post) {
+        $monkey_types = $this->getTermNames($post, 'monkey_type');
+
+        $record_attrs = [
+            'name' => get_field('name', $post->ID),
+            'thumbnail' => get_the_post_thumbnail_url($post->ID),
+            'monkey_types' => $monkey_types,
+        ];
+
+        return $this->getRecordsForPost($post, $record_attrs);
+    }
+
+    /**
+     * Gets the settings for the given index from its local JSON config
+     *
+     * @param string $index_name Unprefixed index name (e.g. `global_search`).
+     *
+     * @return array
+     */
+    function algoliaGetSettings($index_name) {
+        $settings_file_path = CSSH_THEME_PATH . 'algolia-json/' . $index_name . '-settings.json';
+
+        if (!file_exists($settings_file_path)) {
+            return false;
+        }
+
+        return json_decode(
+            file_get_contents($settings_file_path),
+            true
+        );
+    }
+
+    /**
+     * Gets the synonyms for the given index from its local JSON config
+     *
+     * @param string $index_name Unprefixed index name (e.g. `global_search`).
+     *
+     * @return array
+     */
+    function algoliaGetSynonyms($index_name) {
+        $settings_file_path = THEME_PATH . 'algolia-json/' . $index_name . '-synonyms.json';
+
+        if (!file_exists($settings_file_path)) {
+            return false;
+        }
+
+        return json_decode(
+            file_get_contents($settings_file_path),
+            true
+        );
+    }
+
+    /**
+     * Gets the rules for the given index from its local JSON config
+     *
+     * @param string $index_name Unprefixed index name (e.g. `global_search`).
+     *
+     * @return array
+     */
+    function algoliaGetRules($index_name) {
+        $settings_file_path = THEME_PATH . 'algolia-json/' . $index_name . '-rules.json';
+
+        if (!file_exists($settings_file_path)) {
+            return false;
+        }
+
+        return json_decode(
+            file_get_contents($settings_file_path),
+            true
+        );
+    }
+}
