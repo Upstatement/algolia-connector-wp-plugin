@@ -199,7 +199,7 @@ class AlgoliaSerializer {
      * @return array
      */
     function algolia_get_settings($index_name) {
-        $settings_file_path = CSSH_THEME_PATH . 'algolia-json/' . $index_name . '-settings.json';
+        $settings_file_path = THEME_PATH . 'algolia-json/' . $index_name . '-settings.json';
 
         if (!file_exists($settings_file_path)) {
             return false;
