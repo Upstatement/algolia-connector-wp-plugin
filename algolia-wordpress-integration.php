@@ -17,22 +17,24 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/wp-cli.php';
 require_once __DIR__ . '/serializer.php';
 
-// Initialize Algolia PHP search client
-add_action(
-    'init', function () {
-        global $algolia;
-        $algolia = \Algolia\AlgoliaSearch\SearchClient::create(
-            getenv('ALGOLIA_APPLICATION_ID'),
-            getenv('ALGOLIA_ADMIN_API_KEY')
-        );
+add_action('init', 'algolia_init');
+add_filter('get_algolia_index_name', 'get_algolia_index_name');
+add_action('save_post', 'algolia_save_post', 10, 3);
 
-        $algoliaSerializer = new AlgoliaSerializer();
-        $algoliaSerializer->run();
-    }
-);
+/**
+ * Initialize Algolia PHP search client
+ */
+function algolia_init() {
+    global $algolia;
 
-add_filter('get_algolia_index_name', 'getAlgoliaIndexName');
-add_action('save_post', 'algoliaUpdatePost', 10, 3);
+    $algolia = \Algolia\AlgoliaSearch\SearchClient::create(
+        getenv('ALGOLIA_APPLICATION_ID'),
+        getenv('ALGOLIA_ADMIN_API_KEY')
+    );
+
+    $algoliaSerializer = new AlgoliaSerializer();
+    $algoliaSerializer->run();
+}
 
 /**
  * Returns a prefixed Algolia index name for the given name
@@ -42,8 +44,7 @@ add_action('save_post', 'algoliaUpdatePost', 10, 3);
  *
  * @return string example: local_wp_ (with no $name) or local_wp_global_search
  */
-function getAlgoliaIndexName($name = '')
-{
+function get_algolia_index_name($name = '') {
     global $wpdb;
 
     $env_prefix = getenv('ALGOLIA_INDEX_PREFIX') ?: ''; // local, dev, stage, prod, etc.
@@ -62,8 +63,7 @@ function getAlgoliaIndexName($name = '')
  *
  * @return array
  */
-function algoliaUpdatePost($id, $post, $update)
-{
+function algolia_save_post($id, $post, $update) {
     global $algolia;
 
     $post_type = $post->post_type;
@@ -79,7 +79,7 @@ function algoliaUpdatePost($id, $post, $update)
             return $post;
         }
 
-        $filter_name = $post_type.'_to_records';
+        $filter_name = $post_type.'_to_record';
 
         // Bail early if filter does not exist
         if (!has_filter($filter_name)) {

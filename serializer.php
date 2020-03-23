@@ -17,12 +17,12 @@ class AlgoliaSerializer {
             return;
         }
 
-        add_filter('timber/context', array($this, 'addConfigToContext'));
+        add_filter('timber/context', array($this, 'add_config_to_context'));
 
-        add_filter('page_to_records', array($this, 'page_to_records'));
-        add_filter('post_to_records', array($this, 'post_to_records'));
+        add_filter('page_to_record', array($this, 'algolia_page_to_record'));
+        add_filter('post_to_record', array($this, 'algolia_post_to_record'));
         // Demo filter for for custom post type
-        add_filter('monkey_to_records', array($this, 'monkey_to_records'));
+        add_filter('monkey_to_record', array($this, 'algolia_monkey_to_record'));
 
         add_filter('algolia_get_settings', array($this, 'algolia_get_settings'));
         add_filter('algolia_get_synonyms', array($this, 'algolia_get_synonyms'));
@@ -36,8 +36,7 @@ class AlgoliaSerializer {
      *
      * @return array
      */
-    function addAlgoliaConfigToContext($context)
-    {
+    function add_config_to_context($context) {
         $context['ALGOLIA_APPLICATION_ID'] = getenv('ALGOLIA_APPLICATION_ID');
         $context['ALGOLIA_SEARCH_ONLY_API_KEY'] = getenv('ALGOLIA_SEARCH_ONLY_API_KEY');
         $context['ALGOLIA_INDEX_PREFIX'] = getAlgoliaIndexName();
@@ -125,7 +124,7 @@ class AlgoliaSerializer {
      *
      * @return array
      */
-    function getRecordsForPost($post, $post_attrs = []) {
+    function serializeRecord($post, $post_attrs = []) {
         $blog_id = get_current_blog_id();
         $records = [];
 
@@ -152,8 +151,8 @@ class AlgoliaSerializer {
      *
      * @return array
      */
-    function page_to_records($post) {
-        return $this->getRecordsForPost($post, []);
+    function algolia_page_to_record($post) {
+        return $this->serializeRecord($post, []);
     }
 
     /**
@@ -163,15 +162,14 @@ class AlgoliaSerializer {
      *
      * @return array
      */
-    function post_to_records($post) {
+    function algolia_post_to_record($post) {
         $tags = $this->getTermNames($post, 'post_tag');
 
         $post_record_attrs = [
-            // 'introduction' => get_field('introduction', $post->ID),
             'tags' => $tags,
         ];
 
-        return $this->getRecordsForPost($post, $post_record_attrs);
+        return $this->serializeRecord($post, $post_record_attrs);
     }
 
     /**
@@ -181,7 +179,7 @@ class AlgoliaSerializer {
      *
      * @return array
      */
-    function monkey_to_records($post) {
+    function algolia_monkey_to_record($post) {
         $monkey_types = $this->getTermNames($post, 'monkey_type');
 
         $record_attrs = [
@@ -190,7 +188,7 @@ class AlgoliaSerializer {
             'monkey_types' => $monkey_types,
         ];
 
-        return $this->getRecordsForPost($post, $record_attrs);
+        return $this->serializeRecord($post, $record_attrs);
     }
 
     /**

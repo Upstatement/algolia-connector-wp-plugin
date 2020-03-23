@@ -105,7 +105,7 @@ class Algolia_Command {
                     }
 
                     // Use post type to get corresponding serializer function
-                    $filter_name = $post->post_type.'_to_records';
+                    $filter_name = $post->post_type.'_to_record';
 
                     // Bail early if filter does not exist
                     if (!has_filter($filter_name)) {
