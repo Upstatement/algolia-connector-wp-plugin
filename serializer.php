@@ -198,7 +198,7 @@ class AlgoliaSerializer {
      *
      * @return array
      */
-    function algoliaGetSettings($index_name) {
+    function algolia_get_settings($index_name) {
         $settings_file_path = CSSH_THEME_PATH . 'algolia-json/' . $index_name . '-settings.json';
 
         if (!file_exists($settings_file_path)) {
@@ -218,7 +218,7 @@ class AlgoliaSerializer {
      *
      * @return array
      */
-    function algoliaGetSynonyms($index_name) {
+    function algolia_get_synonyms($index_name) {
         $settings_file_path = THEME_PATH . 'algolia-json/' . $index_name . '-synonyms.json';
 
         if (!file_exists($settings_file_path)) {
@@ -238,7 +238,7 @@ class AlgoliaSerializer {
      *
      * @return array
      */
-    function algoliaGetRules($index_name) {
+    function algolia_get_rules($index_name) {
         $settings_file_path = THEME_PATH . 'algolia-json/' . $index_name . '-rules.json';
 
         if (!file_exists($settings_file_path)) {
