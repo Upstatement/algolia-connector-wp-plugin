@@ -1,0 +1,13 @@
+{
+  "name": "upstatement/algolia-wordpress-integration",
+  "authors": [
+    {
+      "name": "Upstatement",
+      "email": "tech@upstatement.com"
+    }
+  ],
+  "description": "Algolia wordpress integration",
+  "require": {
+    "algolia/algoliasearch-client-php": "^2.5"
+  }
+}
