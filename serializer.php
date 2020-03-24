@@ -13,7 +13,7 @@ class AlgoliaSerializer {
      */
     public function run() {
         // Bail early if Algolia plugin is not activated.
-        if (!function_exists('getAlgoliaIndexName')) {
+        if (!function_exists('get_algolia_index_name')) {
             return;
         }
 
@@ -39,7 +39,7 @@ class AlgoliaSerializer {
     function add_config_to_context($context) {
         $context['ALGOLIA_APPLICATION_ID'] = getenv('ALGOLIA_APPLICATION_ID');
         $context['ALGOLIA_SEARCH_ONLY_API_KEY'] = getenv('ALGOLIA_SEARCH_ONLY_API_KEY');
-        $context['ALGOLIA_INDEX_PREFIX'] = getAlgoliaIndexName();
+        $context['ALGOLIA_INDEX_PREFIX'] = get_algolia_index_name();
         return $context;
     }
 
