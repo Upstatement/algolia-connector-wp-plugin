@@ -1,16 +1,59 @@
 # Algolia WordPress Integration
 
-A WordPress plugin following [Algolia's WordPress integration guide](https://www.algolia.com/doc/integration/wordpress/getting-started/quick-start/?language=php) with support for WordPress multisite and large record splitting
+A WordPress plugin derived from [Algolia's WordPress integration guide](https://www.algolia.com/doc/integration/wordpress/getting-started/quick-start/?language=php) with support for [WordPress multisite](https://kinsta.com/blog/wordpress-multisite/#what) and [large record splitting](https://www.algolia.com/doc/guides/sending-and-managing-data/prepare-your-data/how-to/indexing-long-documents/).
+
+## Table of Contents
+
+- [Algolia WordPress Integration](#algolia-wordpress-integration)
+  - [Table of Contents](#table-of-contents)
+  - [What's in the Box](#whats-in-the-box)
+  - [System Requirements](#system-requirements)
+  - [Installation](#installation)
+  - [Getting Started](#getting-started)
+    - [Setting up environment variables](#setting-up-environment-variables)
+    - [Accessing environment variables in templates](#accessing-environment-variables-in-templates)
+  - [WP CLI Commands](#wp-cli-commands)
+    - [Indexing records](#indexing-records)
+    - [Get index configuration and print out in JSON format](#get-index-configuration-and-print-out-in-json-format)
+    - [Set index configuration (using local JSON files)](#set-index-configuration-using-local-json-files)
+  - [Contributing](#contributing)
+  - [Code of Conduct](#code-of-conduct)
+  - [About Upstatement](#about-upstatement)
+
+## What's in the Box
+
+This plugin assumes you're indexing all post types in a **global index**. To modify this functionality, refer to the [docs](https://www.algolia.com/doc/integration/wordpress/indexing/importing-content/?language=php#customizing-algolia-index-name) to customize the plugin.
+
+## System Requirements
+
+- PHP 5.3 or newer (version 7.1+ is highly recommended)
+- [WordPress](https://codex.wordpress.org/Installing_WordPress) (up and running instance)
+- [WP-CLI](https://make.wordpress.org/cli/handbook/installing/)
 
 ## Installation
 
-1. Add this plugin to your `/wp-content/plugins` directory
-2. Install PHP dependencies `composer install`
-3. Activate (or Network Activate) this plugin in your WP admin dashboard
+1. Clone this repository
 
-## Setup
+   ```shell
+   git clone git@github.com:Upstatement/algolia-wordpress-integration.git
+   ```
 
-### Environment Variables
+2. Add this plugin to your `/wp-content/plugins` directory
+3. Install PHP dependencies
+
+   ```shell
+   cd plugins/algolia-wordpress-integration && composer install
+   ```
+
+   This will install all dependencies in the `vendor` directory at the root of the plugin.
+
+4. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
+
+## Getting Started
+
+In addition to activating the plugin, you'll need to provide your Algolia app's API keys.
+
+### Setting up environment variables
 
 At the root of your project (not the plugins directory), add an `.env` file and add the following
 
@@ -23,14 +66,18 @@ ALGOLIA_INDEX_PREFIX=local
 
 The `ALGOLIA_APPLICATION_ID`, `ALGOLIA_ADMIN_API_KEY`, and `ALGOLIA_SEARCH_ONLY_API_KEY` keys can be found in your Algolia dashboard under `API Keys`.
 
-The `ALGOLIA_INDEX_PREFIX` is used to prepend the Algolia index name in order to create separate indices for different environments.
+The `ALGOLIA_INDEX_PREFIX` is used to prepend the Algolia index name in order to use separate indices for different environments.
 
 - `ALGOLIA_INDEX_PREFIX=local` => `local_wp_global_search`
 - `ALGOLIA_INDEX_PREFIX=staging` => `staging_wp_global_search`
 
-To access these environment variables on the front end, we've added the `ALGOLIA_APPLICATION_ID`, `ALGOLIA_SEARCH_ONLY_API_KEY`, and `ALGOLIA_INDEX_PREFIX` keys to the timber context to be accessed via twig files. (Yes, this could be a security issue, but we do not expose the `ALGOLIA_ADMIN_API_KEY`, just the `ALGOLIA_SEARCH_ONLY_API_KEY`.)
+### Accessing environment variables in templates
 
-If you're using [Timber](https://www.upstatement.com/timber/), in your layout file, you should be able to add a `<script>` tag that adds the keys to an object on the `window`.
+Here at Upstatement, we use [Timber](https://www.upstatement.com/timber/) with all of our WordPress sites. Timber allows us to write our templates in [Twig](https://twig.symfony.com/).
+
+To access these the Algolia environment variables in Twig templates, we've added the `ALGOLIA_APPLICATION_ID`, `ALGOLIA_SEARCH_ONLY_API_KEY`, and `ALGOLIA_INDEX_PREFIX` keys to the Timber context.
+
+In your layout file (usually located at `templates/layouts/base.twig`), before the closing body tag, you can add a `<script>` tag to add an object containing the keys to the `window`.
 
 ```html
 <script>
@@ -39,15 +86,19 @@ If you're using [Timber](https://www.upstatement.com/timber/), in your layout fi
       ALGOLIA_APPLICATION_ID: '{{ ALGOLIA_APPLICATION_ID | e("js") }}',
       ALGOLIA_SEARCH_ONLY_API_KEY: '{{ ALGOLIA_SEARCH_ONLY_API_KEY | e("js") }}',
       ALGOLIA_INDEX_PREFIX: '{{ ALGOLIA_INDEX_PREFIX | e("js") }}',
-    }
-  }
+    },
+  };
 </script>
 ```
 
 Then, in your JavaScript:
 
 ```js
-const { ALGOLIA_APPLICATION_ID, ALGOLIA_SEARCH_ONLY_API_KEY } = window.algolia.env;
+const {
+  ALGOLIA_APPLICATION_ID,
+  ALGOLIA_SEARCH_ONLY_API_KEY,
+  ALGOLIA_INDEX_PREFIX,
+} = window.algolia.env;
 ```
 
 ## WP CLI Commands
@@ -99,10 +150,7 @@ At the root of your project, create an `algolia-json` folder and add a file call
   "hitsPerPage": 20,
   "maxValuesPerFacet": 100,
   "version": 2,
-  "searchableAttributes": [
-    "unordered(title)",
-    "unordered(content)",
-  ],
+  "searchableAttributes": ["unordered(title)", "unordered(content)"],
   "numericAttributesToIndex": null,
   "attributesToRetrieve": null,
   "distinct": true,
@@ -131,3 +179,15 @@ This JSON file is used to set the configuration of your global search index with
 ```shell
 ./bin/wp algolia set_config --settings
 ```
+
+## Contributing
+
+We welcome all contributions to our projects! Filing bugs, feature requests, code changes, docs changes, or anything else you'd like to contribute are all more than welcome! More information about contributing can be found in the [contributing guidelines](.github/CONTRIBUTING.md).
+
+## Code of Conduct
+
+Upstatement strives to provide a welcoming, inclusive environment for all users. To hold ourselves accountable to that mission, we have a strictly-enforced [code of conduct](CODE_OF_CONDUCT.md).
+
+## About Upstatement
+
+[Upstatement](https://www.upstatement.com/) is a digital transformation studio headquartered in Boston, MA that imagines and builds exceptional digital experiences. Make sure to check out our [services](https://www.upstatement.com/services/), [work](https://www.upstatement.com/work/), and [open positions](https://www.upstatement.com/jobs/)!

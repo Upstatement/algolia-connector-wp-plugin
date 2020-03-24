@@ -45,7 +45,7 @@ class Algolia_Command {
 
         // Generates index for global index, or passed --index="" arg
         $index_name = isset($assoc_args['index']) ? $assoc_args['index'] : 'global_search';
-        $canonical_index_name = apply_filters('algolia_index_name', $index_name);
+        $canonical_index_name = apply_filters('get_algolia_index_name', $index_name);
         $index = $algolia->initIndex($canonical_index_name);
 
         // If reindexing the global index, clear the entire index
@@ -154,7 +154,7 @@ class Algolia_Command {
 
         // Generates index for global index, or passed --index="" arg
         $index_name = isset($assoc_args['index']) ? $assoc_args['index'] : 'global_search';
-        $canonical_index_name = apply_filters('algolia_index_name', $index_name);
+        $canonical_index_name = apply_filters('get_algolia_index_name', $index_name);
         $index = $algolia->initIndex($canonical_index_name);
 
         // Bail early if index does not exist
@@ -210,7 +210,7 @@ class Algolia_Command {
 
         // Generates index for global index, or passed --index="" arg
         $index_name = isset($assoc_args['index']) ? $assoc_args['index'] : 'global_search';
-        $canonical_index_name = apply_filters('algolia_index_name', $index_name);
+        $canonical_index_name = apply_filters('get_algolia_index_name', $index_name);
         $index = $algolia->initIndex($canonical_index_name);
 
         // Bail early if index does not exist
