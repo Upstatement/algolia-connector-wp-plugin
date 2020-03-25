@@ -67,7 +67,7 @@ class Algolia_Command {
 
             // Loop through searchable post types and serialize each post
             foreach ($searchable_post_types as $post_type) {
-                $this->serialize_records($post_type, $assoc_args);
+                $this->serialize_records($index, $post_type, $assoc_args);
             }
 
             restore_current_blog();
@@ -79,7 +79,7 @@ class Algolia_Command {
      *
      * @return void
      */
-    private function serialize_records($post_type, $assoc_args) {
+    private function serialize_records($index, $post_type, $assoc_args) {
         $paged = 1;
         $count = 0;
 
