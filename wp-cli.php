@@ -51,7 +51,7 @@ class Algolia_Command {
         // If reindexing the global index, clear the entire index
         // https://www.algolia.com/doc/api-reference/api-methods/clear-objects/
         if (!$type) {
-            WP_CLI::line('Clearing all records from index: '.WP_CLI::colorize("%$canonical_index_name%n"));
+            WP_CLI::line('Clearing all records from index: '.WP_CLI::colorize("%p$canonical_index_name%n"));
 
             $index->clearObjects()->wait();
         }
@@ -100,7 +100,7 @@ class Algolia_Command {
 
                 // Serialize each post to be saved as Algolia records
                 foreach ($posts->posts as $post) {
-                    if ($assoc_args['verbose']) {
+                    if (isset($assoc_args['verbose'])) {
                         WP_CLI::line("Serializing [$post->post_type] $post->post_title");
                     }
 
@@ -119,7 +119,7 @@ class Algolia_Command {
                     $count++;
                 }
 
-                if ($assoc_args['verbose']) {
+                if (isset($assoc_args['verbose'])) {
                     WP_CLI::line('Sending batch...');
                 }
 
@@ -132,7 +132,7 @@ class Algolia_Command {
             try {
                 $index->saveObjects($records);
 
-                WP_CLI::success("$count $post_type entries indexed in Algolia");
+                WP_CLI::success("$count $post_type records indexed in Algolia");
 
             } catch (Exception $e) {
                 WP_CLI::error($e->getMessage());
