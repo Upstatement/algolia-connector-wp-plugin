@@ -87,7 +87,12 @@ function algolia_save_post($id, $post, $update) {
         }
 
         // Serialize post
-        $records = (array) apply_filters($filter_name, $post);
+        $records = apply_filters($filter_name, $post);
+        if (!$records) {
+            return $post;
+        }
+
+        $records = (array) $records;
 
         // Get index
         $canonical_index_name = apply_filters('get_algolia_index_name', 'global_search');
