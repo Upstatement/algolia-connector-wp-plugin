@@ -144,12 +144,12 @@ class Algolia_Command {
     }
 
     /**
-     * Get index config and print out in JSON format
-     * `wp algolia get_config <options>`
-     *
+     * Get index config and write to local JSON file
+     * `wp algolia pull_config <options>`
+     * 
      * @return string/bool
      */
-    public function get_config($args, $assoc_args) {
+    public function pull_config($args, $assoc_args) {
         global $algolia;
 
         // Generates index for global index, or passed --index="" arg
@@ -163,15 +163,15 @@ class Algolia_Command {
             return;
         }
 
-        // Print out index settings if '--settings' flag exists
+        // Get index settings if '--settings' flag exists
         if (isset($assoc_args['settings'])) {
             $settings = $index->getSettings();
 
-            WP_CLI::log(WP_CLI::colorize('%CSettings for index "'.$index->getIndexName().'"%n'));
-            print_r(json_encode($settings, JSON_PRETTY_PRINT) . "\n\n");
+            WP_CLI::log(WP_CLI::colorize('%CPulled settings for index "'.$index->getIndexName().'"%n'));
+            apply_filters('algolia_write_settings', $index_name, json_encode($settings, JSON_PRETTY_PRINT));
         }
 
-        // Print out index synonyms if '--synonyms' flag exists
+        // Get index synonyms if '--synonyms' flag exists
         if (isset($assoc_args['synonyms'])) {
             $synonyms_iterator = $index->browseSynonyms();
 
@@ -180,32 +180,32 @@ class Algolia_Command {
                 $synonyms[] = $synonym;
             }
 
-            WP_CLI::log(WP_CLI::colorize('%CSynonyms for index "'.$index->getIndexName().'"%n'));
-            print_r(json_encode($synonyms, JSON_PRETTY_PRINT) . "\n\n");
+            WP_CLI::log(WP_CLI::colorize('%CPulled synonyms for index "'.$index->getIndexName().'"%n'));
+            apply_filters('algolia_write_synonyms', $index_name, json_encode($synonyms, JSON_PRETTY_PRINT));
         }
 
-        // Print out index rules if '--rules' flag exists
+        // Get index rules if '--rules' flag exists
         if (isset($assoc_args['rules'])) {
-            $rules_iterator = $index->searchRules();
+            $rules_iterator = $index->browseRules();
 
             $rules = array();
             foreach ($rules_iterator as $rule) {
                 $rules[] = $rule;
             }
 
-            WP_CLI::log(WP_CLI::colorize('%CRules for index "'.$index->getIndexName().'"%n'));
-            print_r(json_encode($rules, JSON_PRETTY_PRINT) . "\n\n");
+            WP_CLI::log(WP_CLI::colorize('%CPulled rules for index "'.$index->getIndexName().'"%n'));
+            apply_filters('algolia_write_rules', $index_name, json_encode($rules, JSON_PRETTY_PRINT));
         }
     }
 
     /**
      * Set index config based on local JSON config file
      * https://www.algolia.com/doc/integration/wordpress/managing-indices/set-configuration/?language=php
-     * `wp algolia set_config <options>`
+     * `wp algolia push_config <options>`
      *
      * @return string/bool
      */
-    public function set_config($args, $assoc_args) {
+    public function push_config($args, $assoc_args) {
         global $algolia;
 
         // Generates index for global index, or passed --index="" arg

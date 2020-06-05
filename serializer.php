@@ -27,6 +27,10 @@ class AlgoliaSerializer {
         add_filter('algolia_get_settings', array($this, 'algolia_get_settings'));
         add_filter('algolia_get_synonyms', array($this, 'algolia_get_synonyms'));
         add_filter('algolia_get_rules', array($this, 'algolia_get_rules'));
+
+        add_filter('algolia_write_settings', array($this, 'algolia_write_settings'), 10, 2);
+        add_filter('algolia_write_synonyms', array($this, 'algolia_write_synonyms'), 10, 2);
+        add_filter('algolia_write_rules', array($this, 'algolia_write_rules'), 10, 2);
     }
 
     /**
@@ -249,5 +253,47 @@ class AlgoliaSerializer {
             file_get_contents($settings_file_path),
             true
         );
+    }
+
+    /**
+     * Writes settings for the given index to its local JSON config file
+     *
+     * @param string $index_name Unprefixed index name (e.g. `global_search`)
+     * @param string $settings   Index settings in JSON format
+     *
+     * @return void
+     */
+    function algolia_write_settings($index_name, $settings)
+    {
+        $settings_file_path = THEME_PATH . 'algolia-json/' . $index_name . '-settings.json';
+        file_put_contents($settings_file_path, $settings);
+    }
+
+    /**
+     * Writes synonyms for the given index to its local JSON config file
+     *
+     * @param string $index_name Unprefixed index name (e.g. `global_search`)
+     * @param string $synonyms   Index synonyms in JSON format
+     *
+     * @return void
+     */
+    function algolia_write_synonyms($index_name, $synonyms)
+    {
+        $synonyms_file_path = THEME_PATH . 'algolia-json/' . $index_name . '-synonyms.json';
+        file_put_contents($synonyms_file_path, $synonyms);
+    }
+
+    /**
+     * Writes rules for the given index to its local JSON config file
+     *
+     * @param string $index_name Unprefixed index name (e.g. `global_search`)
+     * @param string $rules      Index rules in JSON format
+     *
+     * @return void
+     */
+    function algolia_write_rules($index_name, $rules)
+    {
+        $rules_file_path = THEME_PATH . 'algolia-json/' . $index_name . '-rules.json';
+        file_put_contents($rules_file_path, $rules);
     }
 }
