@@ -133,9 +133,9 @@ To reindex all records for a specific index, use the `--index=""` argument
 ./bin/wp algolia reindex --index="your_index_name"
 ```
 
-### Pull index configuration (outputs to local JSON file)
+### Pull index configuration (outputs to local JSON files)
 
-The following command will write your index configuration to JSON file in a directory called `algolia-json` at the root of your project.
+The following command will write your Algolia index configuration to a JSON file called `global_search-settings.json` under a new `algolia-json` folder at the root of your project.
 
 ```shell
 ./bin/wp algolia pull_config --settings
@@ -143,7 +143,7 @@ The following command will write your index configuration to JSON file in a dire
 
 ### Push index configuration (using local JSON files)
 
-At the root of your project, create an `algolia-json` folder and add a file called `global_search-settings.json`. Below is an example JSON file:
+If you didn't run the `pull_config` command, then at the root of your project, create an `algolia-json` folder and add a file called `global_search-settings.json`. Below is an example JSON file:
 
 ```json
 {
@@ -176,7 +176,7 @@ At the root of your project, create an `algolia-json` folder and add a file call
 }
 ```
 
-This JSON file is used to set the configuration of your global search index with the `push_config` command:
+If you ran `pull_config`, this JSON file should already exist. It is used to set the configuration of your global search index with the `push_config` command:
 
 ```shell
 ./bin/wp algolia push_config --settings
