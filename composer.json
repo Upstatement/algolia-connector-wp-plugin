@@ -1,4 +1,12 @@
 {
+  "name": "upstatement/ups-algolia",
+  "authors": [
+    {
+      "name": "Upstatement",
+      "email": "tech@upstatement.com"
+    }
+  ],
+  "description": "Algolia WordPress integration",
   "require": {
     "algolia/algoliasearch-client-php": "^2.7"
   }
