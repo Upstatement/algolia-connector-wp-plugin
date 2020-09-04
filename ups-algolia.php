@@ -5,7 +5,7 @@
  * Text Domain:     ups-algolia
  * Version:         1.0.0
  * Author:          Upstatement
- * Author URI:      https://www.upstatement.com*
+ * Author URI:      https://www.upstatement.com
  *
  * @package         Ups_Algolia
  */
