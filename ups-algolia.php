@@ -28,9 +28,11 @@ add_action('save_post', __NAMESPACE__ . '\\save_post', 10, 3);
 function init() {
   global $algolia;
 
+  $algolia_app = Filters\get_algolia_application();
+
   $algolia = \Algolia\AlgoliaSearch\SearchClient::create(
-    getenv('ALGOLIA_APPLICATION_ID'),
-    getenv('ALGOLIA_ADMIN_KEY')
+    $algolia_app['application_id'],
+    $algolia_app['admin_key'],
   );
 }
 
@@ -42,53 +44,68 @@ function init() {
  * @param object  $post   Post object
  * @param bool    $update Whether this is an existing post getting updated
  *
- * @return array
+ * @return void
  */
 function save_post($id, $post, $update) {
-  // Don't save posts on development mode
-  if (getenv('WP_ENV') === 'development') {
-    return;
-  }
-
   global $algolia;
-  $FILTER_KEY = 'distinct_key';
 
-  $post_type = Utils\transform_type($post->post_type);
+  // Attribute used to delete outdated records
+  // that currently exist on Algolia
+  $ATTRIBUTE_FOR_DISTINCT_KEY = 'distinct_key';
+
   $post_status = $post->post_status;
 
-  if (!Filters\is_indexable($id, $post)) {
-    return;
-  }
-
-  // Get serializer filter name
-  $filter_name = Utils\get_serializer_filter($post_type);
-
-  if (!has_filter($filter_name)) {
-    return;
-  }
-
   // Serialize post
-  $records = apply_filters($filter_name, $post);
+  $records = serialize_post($id, $post);
 
-  // Bail if no records given or filter does not exist
+  // Bail if serializer filter returns no records
   if (!$records) {
     return;
   }
 
-  $records = (array) $records;
-
-  // Create algolia index
+  // Create Algolia index
   $index_name = Filters\get_index_name($post);
   $algolia_index = $algolia->initIndex($index_name);
 
-  // Get all unique $FILTER_KEY values
-  $all_filter_key_values = Utils\get_unique_key_values($records, $FILTER_KEY);
-  $filter_string = Utils\chain_filters($FILTER_KEY, $all_filter_key_values);
+  // Get all unique $ATTRIBUTE_FOR_DISTINCT_KEY values
+  $all_filter_key_values = Utils\get_unique_key_values($records, $ATTRIBUTE_FOR_DISTINCT_KEY);
+  $filter_string = Utils\chain_filters($ATTRIBUTE_FOR_DISTINCT_KEY, $all_filter_key_values);
 
-  // Delete posts with matching $FILTER_KEY
+  // Delete posts with matching $ATTRIBUTE_FOR_DISTINCT_KEY
   $algolia_index->deleteBy(['filters' => $filter_string]);
 
   if ($post_status == 'publish') {
     $algolia_index->saveObjects($records);
   }
+}
+
+/**
+ * Serialize the given post.
+ *
+ * @param string $id   id of post
+ * @param object $post WP Post object
+ *
+ * @return array
+ */
+function serialize_post($id, $post) {
+  // Reformat post_type
+  $post_type = Utils\transform_type($post->post_type);
+
+  // Bail if post is not indexable
+  if (!Filters\is_indexable($id, $post)) {
+    return null;
+  }
+
+  // Get serializer filter name
+  $filter_name = Utils\get_serializer_filter($post_type);
+
+  // Bail if post doesn't have serializer
+  if (!has_filter($filter_name)) {
+    return null;
+  }
+
+  // Serialize post
+  $records = apply_filters($filter_name, $post);
+
+  return $records;
 }

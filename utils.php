@@ -2,10 +2,10 @@
 namespace UpsAlgolia\Utils;
 
 /**
- * Transform type to standard format.
+ * Transform type to function friendly format.
  * - Replace '-' with '_'
  *
- * @param string $type post or term type
+ * @param string $type type
  *
  * @return string
  */
@@ -39,6 +39,18 @@ function get_unique_key_values($arr, $key) {
 }
 
 /**
+ * Create Algolia filter.
+ *
+ * @param string $attribute
+ * @param string $value
+ *
+ * @return string e.g. type:"page"
+ */
+function create_filter($attribute, $value) {
+  return "${attribute}:\"${value}\"";
+}
+
+/**
  * Create Algolia filters by chaining attribute:value with
  * given operator.
  *
@@ -46,12 +58,12 @@ function get_unique_key_values($arr, $key) {
  * @param string[] $values    all values
  * @param string   $operator  operator between each filter
  *
- * @return string  e.g. "category:cars OR category:bikes"
+ * @return string  e.g. category:"cars" OR category:"bikes"
  */
 function chain_filters($attribute, $values, $operator = 'OR') {
   $attributed_values = array_map(
     function ($value) use ($attribute) {
-      return "${attribute}:\"${value}\"";
+      return create_filter($attribute, $value);
     },
     $values
   );
@@ -59,3 +71,47 @@ function chain_filters($attribute, $values, $operator = 'OR') {
   return implode(" ${operator} ", $attributed_values);
 }
 
+
+/**
+ * Map given key value pairs into Algolia filters.
+ *
+ * @param object $dict
+ * @param string $operator
+ *
+ * @return string e.g. type:"page" OR title:"UpsAlgolia"
+ */
+function map_into_filters($dict, $operator = 'OR') {
+  $attributed_values = array_map(
+    function ($key) use ($dict) {
+      return create_filter($key, $dict[$key]);
+    },
+    array_keys($dict)
+  );
+
+  return implode(" ${operator} ", $attributed_values);
+}
+
+/**
+ * Throw exception for undefined filter.
+ *
+ * @param string filter
+ *
+ * @throw Exception
+ */
+function throw_undefined_filter_exception($filter) {
+  throw new \Error("Please define the ${filter} filter in your theme");
+}
+
+/**
+ * Gets an array of searchable post types
+ *
+ * @return array
+ */
+function get_searchable_post_types() {
+  return get_post_types(
+    array(
+      'public' => true,
+      'exclude_from_search' => false
+    )
+  );
+}
