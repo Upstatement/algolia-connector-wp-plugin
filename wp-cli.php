@@ -33,7 +33,7 @@ function serialize_records($index, $post_type, $assoc_args) {
     }
 
     try {
-      $cum_records = [];
+      $serialized_records = [];
 
       // Serialize each post to be saved as Algolia records
       foreach ($posts->posts as $post) {
@@ -44,7 +44,7 @@ function serialize_records($index, $post_type, $assoc_args) {
         $records = UpsAlgolia\serialize_post(\get_the_id(), $post);
 
         if ($records) {
-          $cum_records = array_merge($cum_records, $records);
+          $serialized_records = array_merge($serialized_records, $records);
           $count++;
         }
       }
@@ -56,7 +56,7 @@ function serialize_records($index, $post_type, $assoc_args) {
     // Save the records in Algolia!
     // https://www.algolia.com/doc/api-reference/api-methods/save-objects/
     try {
-      $index->saveObjects($cum_records);
+      $index->saveObjects($serialized_records);
 
       \WP_CLI::success("$count $post_type records indexed in Algolia");
 
