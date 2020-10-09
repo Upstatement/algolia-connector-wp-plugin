@@ -1,28 +1,10 @@
-# Algolia WordPress Integration
+# UpsAlgolia
 
-A WordPress plugin derived from [Algolia's WordPress integration guide](https://www.algolia.com/doc/integration/wordpress/getting-started/quick-start/?language=php) with support for [WordPress multisite](https://kinsta.com/blog/wordpress-multisite/#what) and [large record splitting](https://www.algolia.com/doc/guides/sending-and-managing-data/prepare-your-data/how-to/indexing-long-documents/).
+A WordPress Algolia plugin derived from [Algolia's WordPress integration guide](https://www.algolia.com/doc/integration/wordpress/getting-started/quick-start/?language=php).
+
+UpsAlgolia implements post indexing and deletion, and Algolia index management (e.g. clearing records, pushing settings). The plugin exposes various [WordPress filters](https://developer.wordpress.org/plugins/hooks/filters/) to be theme agnostic and compatible with a Multisite environment.
 
 ## Table of Contents
-
-- [Algolia WordPress Integration](#algolia-wordpress-integration)
-  - [Table of Contents](#table-of-contents)
-  - [What's in the Box](#whats-in-the-box)
-  - [System Requirements](#system-requirements)
-  - [Installation](#installation)
-  - [Getting Started](#getting-started)
-    - [Setting up environment variables](#setting-up-environment-variables)
-    - [Accessing environment variables in templates](#accessing-environment-variables-in-templates)
-  - [WP CLI Commands](#wp-cli-commands)
-    - [Indexing records](#indexing-records)
-    - [Get index configuration and print out in JSON format](#get-index-configuration-and-print-out-in-json-format)
-    - [Set index configuration (using local JSON files)](#set-index-configuration-using-local-json-files)
-  - [Contributing](#contributing)
-  - [Code of Conduct](#code-of-conduct)
-  - [About Upstatement](#about-upstatement)
-
-## What's in the Box
-
-This plugin assumes you're indexing all post types in a **global index**. To modify this functionality, refer to the [docs](https://www.algolia.com/doc/integration/wordpress/indexing/importing-content/?language=php#customizing-algolia-index-name) to customize the plugin.
 
 ## System Requirements
 
@@ -49,9 +31,102 @@ This plugin assumes you're indexing all post types in a **global index**. To mod
 
 4. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
 
-## Getting Started
+## :wave: Meet the Filters
 
-In addition to activating the plugin, you'll need to provide your Algolia app's API keys.
+#### UpsAlgolia\get_algolia_application
+
+```php
+/**
+ * Get credentials to Algolia application.
+ *
+ * @see https://www.algolia.com/doc/guides/security/api-keys/
+ *
+ * @return object [ "application_id": string, "admin_key": string ]
+ */
+function get_algolia_application()
+```
+
+#### UpsAlgolia\get_index_name
+
+```php
+/**
+ * Get Algolia index name for given post.
+ *
+ * @param object $post post
+ *
+ * @return string
+ */
+function get_index_name($post)
+```
+
+#### UpsAlgolia\is_indexable
+
+```php
+/**
+ * Can or should this post be indexed?
+ *
+ * @param string $id    id of post
+ * @param object $post  post
+ *
+ * @return bool
+ */
+function is_indexable($id, $post)
+```
+
+#### UpsAlgolia\\<post_type>\_to_record
+
+```php
+/**
+ * Serialize given post into Algolia records
+ *
+ * @param object $post post
+ *
+ * @return array one or more Algolia records
+ */
+function <post_type>_to_record($post)
+```
+
+#### UpsAlgolia\get_algolia_settings
+
+```php
+/**
+ * Get Algolia settings
+ * @see https://www.algolia.com/doc/api-reference/settings-api-parameters/
+ *
+ * @param string $index index name
+ *
+ * @return object
+ */
+function get_algolia_settings($index)
+```
+
+#### UpsAlgolia\get_algolia_rules
+
+```php
+/**
+ * Get Algolia rules.
+ * @see https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/
+ *
+ * @param string $index index name
+ *
+ * @return object
+ */
+function get_algolia_rules($index)
+```
+
+#### UpsAlgolia\get_algolia_synonyms
+
+```php
+/**
+ * Get Algolia synonyms.
+ * @see https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/
+ *
+ * @param string $index index name
+ *
+ * @return object
+ */
+function get_algolia_synonyms($index)
+```
 
 ### Setting up environment variables
 
