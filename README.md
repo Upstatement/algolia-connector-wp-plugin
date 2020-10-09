@@ -6,19 +6,19 @@ UpsAlgolia implements post indexing and deletion, and Algolia index management (
 
 ## Table of Contents
 
-- [System Requirements](#system-requirements)
-- [Installation](#installation)
-- [Meet the Filters](#meet-the-filters)
-- [WP CLI Commands](#wp-cli-commands)
-- [Examples](#examples)
+- [System Requirements](#gear-system-requirements)
+- [Installation](#computer-installation)
+- [Meet the Filters](#wave-meet-the-filters)
+- [WP CLI Commands](#checkered_flag-wp-cli-commands)
+- [Examples](#gift-examples)
 
-## System Requirements
+## :gear: System Requirements
 
 - PHP 5.3 or newer (version 7.1+ is highly recommended)
 - [WordPress](https://codex.wordpress.org/Installing_WordPress) (up and running instance)
 - [WP-CLI](https://make.wordpress.org/cli/handbook/installing/)
 
-## Installation
+## :computer: Installation
 
 1. Clone this repository
 
@@ -37,7 +37,7 @@ UpsAlgolia implements post indexing and deletion, and Algolia index management (
 
 4. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
 
-## Meet the Filters
+## :wave: Meet the Filters
 
 ### UpsAlgolia\get_algolia_application
 
@@ -136,7 +136,7 @@ function get_algolia_rules($index)
 function get_algolia_synonyms($index)
 ```
 
-## WP CLI Commands
+## :checkered_flag: WP CLI Commands
 
 [WP CLI](https://wp-cli.org/) commands are used to easily manage our WordPress content in Algolia.
 
@@ -196,7 +196,7 @@ wp algolia clear global_search --type=post
  */
 ```
 
-## Examples
+## :gift: Examples
 
 Examples for hooking into UpsAlgolia filters are [here](./docs).
 
