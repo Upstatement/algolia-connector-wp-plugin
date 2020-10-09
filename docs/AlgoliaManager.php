@@ -1,3 +1,9 @@
+/**
+ * This is an example of integrating UpsAlgolia
+ * into [Editorial Starter Kit](https://github.com/Upstatement/editorial-starter-wp-theme).
+ * Be sure to include and initialize AlgoliaManager in your functions.php file.
+ */
+
 <?php
 namespace HarvardDCE\Managers;
 
