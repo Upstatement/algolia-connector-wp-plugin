@@ -6,6 +6,12 @@ UpsAlgolia implements post indexing and deletion, and Algolia index management (
 
 ## Table of Contents
 
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Meet the Filters](#meet-the-filters)
+- [WP CLI Commands](#wp-cli-commands)
+- [Examples](#examples)
+
 ## System Requirements
 
 - PHP 5.3 or newer (version 7.1+ is highly recommended)
@@ -31,7 +37,7 @@ UpsAlgolia implements post indexing and deletion, and Algolia index management (
 
 4. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
 
-## :wave: Meet the Filters
+## Meet the Filters
 
 ### UpsAlgolia\get_algolia_application
 
@@ -85,6 +91,8 @@ function is_indexable($id, $post)
  */
 function <post_type>_to_record($post)
 ```
+
+Any dashes `-` will be replaced with underscores `_`.
 
 ### UpsAlgolia\get_algolia_settings
 
@@ -188,6 +196,10 @@ wp algolia clear global_search --type=post
  */
 ```
 
+## Examples
+
+Examples for hooking into UpsAlgolia filters are [here](./docs).
+
 ## Contributing
 
 We welcome all contributions to our projects! Filing bugs, feature requests, code changes, docs changes, or anything else you'd like to contribute are all more than welcome! More information about contributing can be found in the [contributing guidelines](.github/CONTRIBUTING.md).
@@ -199,7 +211,3 @@ Upstatement strives to provide a welcoming, inclusive environment for all users.
 ## About Upstatement
 
 [Upstatement](https://www.upstatement.com/) is a digital transformation studio headquartered in Boston, MA that imagines and builds exceptional digital experiences. Make sure to check out our [services](https://www.upstatement.com/services/), [work](https://www.upstatement.com/work/), and [open positions](https://www.upstatement.com/jobs/)!
-
-```
-
-```
