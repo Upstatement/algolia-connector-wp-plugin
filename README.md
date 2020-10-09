@@ -33,7 +33,7 @@ UpsAlgolia implements post indexing and deletion, and Algolia index management (
 
 ## :wave: Meet the Filters
 
-#### UpsAlgolia\get_algolia_application
+### UpsAlgolia\get_algolia_application
 
 ```php
 /**
@@ -46,7 +46,7 @@ UpsAlgolia implements post indexing and deletion, and Algolia index management (
 function get_algolia_application()
 ```
 
-#### UpsAlgolia\get_index_name
+### UpsAlgolia\get_index_name
 
 ```php
 /**
@@ -59,7 +59,7 @@ function get_algolia_application()
 function get_index_name($post)
 ```
 
-#### UpsAlgolia\is_indexable
+### UpsAlgolia\is_indexable
 
 ```php
 /**
@@ -73,7 +73,7 @@ function get_index_name($post)
 function is_indexable($id, $post)
 ```
 
-#### UpsAlgolia\\<post_type>\_to_record
+### UpsAlgolia\\<post_type>\_to_record
 
 ```php
 /**
@@ -86,7 +86,7 @@ function is_indexable($id, $post)
 function <post_type>_to_record($post)
 ```
 
-#### UpsAlgolia\get_algolia_settings
+### UpsAlgolia\get_algolia_settings
 
 ```php
 /**
@@ -100,7 +100,7 @@ function <post_type>_to_record($post)
 function get_algolia_settings($index)
 ```
 
-#### UpsAlgolia\get_algolia_rules
+### UpsAlgolia\get_algolia_rules
 
 ```php
 /**
@@ -114,7 +114,7 @@ function get_algolia_settings($index)
 function get_algolia_rules($index)
 ```
 
-#### UpsAlgolia\get_algolia_synonyms
+### UpsAlgolia\get_algolia_synonyms
 
 ```php
 /**
@@ -128,133 +128,64 @@ function get_algolia_rules($index)
 function get_algolia_synonyms($index)
 ```
 
-### Setting up environment variables
-
-At the root of your project (not the plugins directory), add an `.env` file and add the following
-
-```shell
-ALGOLIA_APPLICATION_ID=
-ALGOLIA_ADMIN_API_KEY=
-ALGOLIA_SEARCH_ONLY_API_KEY=
-ALGOLIA_INDEX_PREFIX=local
-```
-
-The `ALGOLIA_APPLICATION_ID`, `ALGOLIA_ADMIN_API_KEY`, and `ALGOLIA_SEARCH_ONLY_API_KEY` keys can be found in your Algolia dashboard under `API Keys`.
-
-The `ALGOLIA_INDEX_PREFIX` is used to prepend the Algolia index name in order to use separate indices for different environments.
-
-- `ALGOLIA_INDEX_PREFIX=local` => `local_wp_global_search`
-- `ALGOLIA_INDEX_PREFIX=staging` => `staging_wp_global_search`
-
-### Accessing environment variables in templates
-
-Here at Upstatement, we use [Timber](https://www.upstatement.com/timber/) with all of our WordPress sites. Timber allows us to write our templates in [Twig](https://twig.symfony.com/).
-
-To access these the Algolia environment variables in Twig templates, we've added the `ALGOLIA_APPLICATION_ID`, `ALGOLIA_SEARCH_ONLY_API_KEY`, and `ALGOLIA_INDEX_PREFIX` keys to the Timber context.
-
-In your layout file (usually located at `templates/layouts/base.twig`), before the closing body tag, you can add a `<script>` tag to add an object containing the keys to the `window`.
-
-```html
-<script>
-  window.algolia = {
-    env: {
-      ALGOLIA_APPLICATION_ID: '{{ ALGOLIA_APPLICATION_ID | e("js") }}',
-      ALGOLIA_SEARCH_ONLY_API_KEY: '{{ ALGOLIA_SEARCH_ONLY_API_KEY | e("js") }}',
-      ALGOLIA_INDEX_PREFIX: '{{ ALGOLIA_INDEX_PREFIX | e("js") }}',
-    },
-  };
-</script>
-```
-
-Then, in your JavaScript:
-
-```js
-const {
-  ALGOLIA_APPLICATION_ID,
-  ALGOLIA_SEARCH_ONLY_API_KEY,
-  ALGOLIA_INDEX_PREFIX,
-} = window.algolia.env;
-```
-
 ## WP CLI Commands
 
-[WP CLI](https://wp-cli.org/) commands are used to easily index our WordPress content in Algolia.
+[WP CLI](https://wp-cli.org/) commands are used to easily manage our WordPress content in Algolia.
 
 If you're using a [Skela](https://github.com/Upstatement/skela-wp-theme) theme, you can run WP CLI commands via the [`./bin/wp` script](https://github.com/Upstatement/skela-wp-theme/blob/master/bin/wp). Otherwise, omit `./bin/` from the following commands.
 
-### Indexing records
+### reindex
 
-To reindex ALL records in the **global index**, use the following command
-
-```shell
-./bin/wp algolia reindex
+```php
+/**
+ * Reindex the records of a post type from given index.
+ *
+ * @param string  index_name  name of Algolia index
+ * @param string  post_type   post type to reindex
+ * @param integer blog_id     blog id to pull posts from
+ *
+ * `wp algolia reindex <index_name> --type=<post_type> --blog_id=<blog_id>`
+ */
 ```
 
-To reindex all records with more detailed logs, use the `--verbose` flag
+If `post_type` is not specified, this wp-cli command will reindex all searchable post types whose `exclude_from_search` is `false`. If `blog_id` is not specified, this wp-cli command will reindex all available sites.
 
-```shell
-./bin/wp algolia reindex --verbose
+> Note: this does not clear or replace records in the index. To do so, run the `clear` command beforehand.
+
+### clear
+
+```php
+/**
+ * Clear the records from given index and with given filters.
+ *
+ * @param string  index_name  name of Algolia index
+ * @param key     attribute in Algolia records
+ * @param value   value mapped to given attribute
+ *
+ * `wp algolia clear <index_name> [--<key>=<value>, ...]`
+ */
 ```
 
-To reindex all records for a specific post type, use the `--type=""` argument
+Specify which subset of records to clear by naming the `key`(s) and their corresponding `value`s. For example, if your records have the `type` key, you can clear all records with `post` as their value like this:
 
 ```shell
-./bin/wp algolia reindex --type="monkey"
+wp algolia clear global_search --type=post
 ```
 
-To reindex all records for a specific index, use the `--index=""` argument
+### push_config
 
-```shell
-./bin/wp algolia reindex --index="your_index_name"
-```
-
-### Pull index configuration (outputs to local JSON files)
-
-The following command will write your Algolia index configuration to a JSON file called `global_search-settings.json` under a new `algolia-json` folder at the root of your project.
-
-```shell
-./bin/wp algolia pull_config --settings
-```
-
-### Push index configuration (using local JSON files)
-
-If you didn't run the `pull_config` command, then at the root of your project, create an `algolia-json` folder and add a file called `global_search-settings.json`. Below is an example JSON file:
-
-```json
-{
-  "minWordSizefor1Typo": 4,
-  "minWordSizefor2Typos": 8,
-  "hitsPerPage": 20,
-  "maxValuesPerFacet": 100,
-  "version": 2,
-  "searchableAttributes": ["unordered(title)", "unordered(content)"],
-  "numericAttributesToIndex": null,
-  "attributesToRetrieve": null,
-  "distinct": true,
-  "unretrievableAttributes": null,
-  "optionalWords": null,
-  "attributesForFaceting": [],
-  "attributesToSnippet": ["content:10", "title:10"],
-  "attributesToHighlight": null,
-  "paginationLimitedTo": 1000,
-  "attributeForDistinct": "distinct_key",
-  "exactOnSingleWordQuery": "attribute",
-  "ranking": ["typo", "geo", "words", "filters", "proximity", "attribute", "exact", "custom"],
-  "customRanking": null,
-  "separatorsToIndex": "",
-  "removeWordsIfNoResults": "none",
-  "queryType": "prefixLast",
-  "highlightPreTag": "<em>",
-  "highlightPostTag": "</em>",
-  "snippetEllipsisText": "...",
-  "alternativesAsExact": ["ignorePlurals", "singleWordSynonym"]
-}
-```
-
-If you ran `pull_config`, this JSON file should already exist. It is used to set the configuration of your global search index with the `push_config` command:
-
-```shell
-./bin/wp algolia push_config --settings
+```php
+/**
+ * Push Algolia config to index if provided, otherwise
+ * send config to all available indices.
+ *
+ * @param string index_name  name of Algolia index
+ * @param bool   settings    reconfigure settings
+ * @param bool   synonyms    reconfigure synonyms
+ * @param bool   rules       reconfigure rules
+ *
+ * `wp algolia push_config <index_name> [--settings] [--synonyms] [--rules]`
+ */
 ```
 
 ## Contributing
@@ -268,3 +199,7 @@ Upstatement strives to provide a welcoming, inclusive environment for all users.
 ## About Upstatement
 
 [Upstatement](https://www.upstatement.com/) is a digital transformation studio headquartered in Boston, MA that imagines and builds exceptional digital experiences. Make sure to check out our [services](https://www.upstatement.com/services/), [work](https://www.upstatement.com/work/), and [open positions](https://www.upstatement.com/jobs/)!
+
+```
+
+```
