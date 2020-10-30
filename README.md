@@ -1,13 +1,13 @@
-# UpsAlgolia
+# Upstatement Algolia Admin
 
 A WordPress Algolia plugin derived from [Algolia's WordPress integration guide](https://www.algolia.com/doc/integration/wordpress/getting-started/quick-start/?language=php).
 
-UpsAlgolia implements post indexing and deletion, and Algolia index management (e.g. clearing records, pushing settings). The plugin exposes various [WordPress filters](https://developer.wordpress.org/plugins/hooks/filters/) to be theme agnostic and compatible with a Multisite environment.
+UpsAlgolia implements the backend administration of Algolia such as post indexing and deletion, and Algolia index management (e.g. clearing records, reindexing records, pushing settings). The plugin exposes various [WordPress filters](https://developer.wordpress.org/plugins/hooks/filters/) to be theme agnostic and compatible with a Multisite environment.
 
 ## Table of Contents
 
 - [System Requirements](#gear-system-requirements)
-- [Installation](#computer-installation)
+- [Quick Start](#fire-quick-start)
 - [Meet the Filters](#wave-meet-the-filters)
 - [WP CLI Commands](#checkered_flag-wp-cli-commands)
 - [Examples](#gift-examples)
