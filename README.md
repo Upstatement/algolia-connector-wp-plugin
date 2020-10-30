@@ -150,6 +150,10 @@ add_filter('UpsAlgolia\<post_type>_to_record', '<post_type>_to_record');
 function <post_type>_to_record($post)
 ```
 
+The serializer function should return an array of records to support [content splitting](https://www.algolia.com/doc/integration/wordpress/advanced/splitting-large-records/?language=php).
+
+> UpsAlgolia expects the `distinct_key` attribute in every record. It uses the attribute to clear all preexisting records in Algolia when updating a post in WordPress admin to ensure that there are no duplicate records.
+
 <br/>
 
 ### UpsAlgolia\get_algolia_settings
