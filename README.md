@@ -35,7 +35,7 @@ UpsAlgolia implements the backend administration of Algolia such as post indexin
 
    This will install all dependencies in the `vendor` directory at the root of the plugin.
 
-4. Port the example [serializer code](./docs/functions.php) to your theme's `functions.php`. Replace the placeholder `ALGOLIA_APPLICATION_ID` and `ALGOLIA_ADMIN_KEY` with your Algolia instance.
+4. Port the example [serializer code](./docs/functions.php) to your theme's `functions.php`. Replace the placeholder `ALGOLIA_APPLICATION_ID` and `ALGOLIA_ADMIN_KEY` with your Algolia application.
 
    ```php
    /**
@@ -70,13 +70,17 @@ UpsAlgolia implements the backend administration of Algolia such as post indexin
    ```
 
 6. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
-7. Saving posts or pages should index them to your Algolia instance.
+7. Saving posts or pages should index them to your Algolia application.
 
 ## :wave: Meet the Filters
 
 ### UpsAlgolia\get_algolia_application
 
+Retreives the necessary credentials to an Algolia application. This filter expects the application ID and admin key.
+
 ```php
+add_filter('UpsAlgolia\get_algolia_application', 'get_algolia_application');
+
 /**
  * Get credentials to Algolia application.
  *
@@ -89,7 +93,11 @@ function get_algolia_application()
 
 ### UpsAlgolia\get_index_name
 
+Retrieve the targeted Algolia index for a given post. You can choose the index based on the post's type or blog id for example if you chose to partition the indices that way. Otherwise, you can return a standard index for all posts.
+
 ```php
+add_filter('UpsAlgolia\get_index_name', 'get_index_name');
+
 /**
  * Get Algolia index name for given post.
  *
@@ -102,7 +110,11 @@ function get_index_name($post)
 
 ### UpsAlgolia\is_indexable
 
+Checks whether given post is to be indexed. If `true`, UpsAlgolia will run the serializer on the post and index it to Algolia. Otherwise, UpsAlgolia will skip the post.
+
 ```php
+add_filter('UpsAlgolia\is_indexable', 'is_indexable', 10, 2);
+
 /**
  * Can or should this post be indexed?
  *
@@ -116,7 +128,11 @@ function is_indexable($id, $post)
 
 ### UpsAlgolia\\<post_type>\_to_record
 
+Serialize the given post based on its type (e.g. `post`, `page`, `<your_custom_post_type>`). To maintain consistency in naming the serializer function, UpsAlgolia transforms the post type to standard conventions. For example, the plugin will transform dashes (`-`) to underscores (`_`).
+
 ```php
+add_filter('UpsAlgolia\<post_type>_to_record', '<post_type>_to_record');
+
 /**
  * Serialize given post into Algolia records
  *
@@ -127,11 +143,13 @@ function is_indexable($id, $post)
 function <post_type>_to_record($post)
 ```
 
-Any dashes `-` will be replaced with underscores `_`.
-
 ### UpsAlgolia\get_algolia_settings
 
+Retrieve an object representing [Algolia settings](https://www.algolia.com/doc/api-reference/settings-api-parameters/). This filter will be used by the `push_config` WP CLI command. Add this filter if you need to maintain consistent settings across your indices.
+
 ```php
+add_filter('UpsAlgolia\get_algolia_settings', 'get_algolia_settings');
+
 /**
  * Get Algolia settings
  * @see https://www.algolia.com/doc/api-reference/settings-api-parameters/
@@ -145,7 +163,11 @@ function get_algolia_settings($index)
 
 ### UpsAlgolia\get_algolia_rules
 
+Retrieve an object representing [Algolia rules](https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/). This filter will be used by the `push_config` WP CLI command. Add this filter if you need to maintain consistent rules across your indices.
+
 ```php
+add_filter('UpsAlgolia\get_algolia_rules', 'get_algolia_rules');
+
 /**
  * Get Algolia rules.
  * @see https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/
@@ -159,7 +181,11 @@ function get_algolia_rules($index)
 
 ### UpsAlgolia\get_algolia_synonyms
 
+Retrieve an object representing [Algolia synonyms](https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/). This filter will be used by the `push_config` WP CLI command. Add this filter if you need to maintain consistent synonyms across your indices.
+
 ```php
+add_filter('UpsAlgolia\get_algolia_synonyms', 'get_algolia_synonyms');
+
 /**
  * Get Algolia synonyms.
  * @see https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/
