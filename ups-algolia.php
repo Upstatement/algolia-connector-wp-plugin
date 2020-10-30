@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name:     Upstatement Algolia
- * Description:     Search records indexing for Algolia
+ * Plugin Name:     Upstatement Algolia Admin
+ * Description:     Search records serialization and index management for Algolia
  * Text Domain:     ups-algolia
  * Version:         1.0.0
  * Author:          Upstatement
  * Author URI:      https://www.upstatement.com
  *
- * @package         Ups_Algolia
+ * @package         UpsAlgolia
  */
 
 namespace UpsAlgolia;
