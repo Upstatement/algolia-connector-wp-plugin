@@ -11,6 +11,7 @@ UpsAlgolia implements the backend administration of Algolia such as post indexin
 - [Meet the Filters](#wave-meet-the-filters)
 - [WP CLI Commands](#checkered_flag-wp-cli-commands)
 - [Examples](#gift-examples)
+- [Road Map](#world-map-road-map)
 
 ## :gear: System Requirements
 
@@ -91,6 +92,8 @@ add_filter('UpsAlgolia\get_algolia_application', 'get_algolia_application');
 function get_algolia_application()
 ```
 
+<br/>
+
 ### UpsAlgolia\get_index_name
 
 Retrieve the targeted Algolia index for a given post. You can choose the index based on the post's type or blog id for example if you chose to partition the indices that way. Otherwise, you can return a standard index for all posts.
@@ -107,6 +110,8 @@ add_filter('UpsAlgolia\get_index_name', 'get_index_name');
  */
 function get_index_name($post)
 ```
+
+<br/>
 
 ### UpsAlgolia\is_indexable
 
@@ -126,6 +131,8 @@ add_filter('UpsAlgolia\is_indexable', 'is_indexable', 10, 2);
 function is_indexable($id, $post)
 ```
 
+<br/>
+
 ### UpsAlgolia\\<post_type>\_to_record
 
 Serialize the given post based on its type (e.g. `post`, `page`, `<your_custom_post_type>`). To maintain consistency in naming the serializer function, UpsAlgolia transforms the post type to standard conventions. For example, the plugin will transform dashes (`-`) to underscores (`_`).
@@ -142,6 +149,8 @@ add_filter('UpsAlgolia\<post_type>_to_record', '<post_type>_to_record');
  */
 function <post_type>_to_record($post)
 ```
+
+<br/>
 
 ### UpsAlgolia\get_algolia_settings
 
@@ -161,6 +170,8 @@ add_filter('UpsAlgolia\get_algolia_settings', 'get_algolia_settings');
 function get_algolia_settings($index)
 ```
 
+<br/>
+
 ### UpsAlgolia\get_algolia_rules
 
 Retrieve an object representing [Algolia rules](https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/). This filter will be used by the `push_config` WP CLI command. Add this filter if you need to maintain consistent rules across your indices.
@@ -178,6 +189,8 @@ add_filter('UpsAlgolia\get_algolia_rules', 'get_algolia_rules');
  */
 function get_algolia_rules($index)
 ```
+
+<br/>
 
 ### UpsAlgolia\get_algolia_synonyms
 
@@ -197,6 +210,8 @@ add_filter('UpsAlgolia\get_algolia_synonyms', 'get_algolia_synonyms');
 function get_algolia_synonyms($index)
 ```
 
+<br/>
+
 ## :checkered_flag: WP CLI Commands
 
 [WP CLI](https://wp-cli.org/) commands are used to easily manage our WordPress content in Algolia.
@@ -205,35 +220,33 @@ If you're using a [Skela](https://github.com/Upstatement/skela-wp-theme) theme, 
 
 ### reindex
 
-```php
-/**
- * Reindex the records of a post type from given index.
- *
- * @param string  index_name  name of Algolia index
- * @param string  post_type   post type to reindex
- * @param integer blog_id     blog id to pull posts from
- *
- * `wp algolia reindex <index_name> --type=<post_type> --blog_id=<blog_id>`
- */
+Reindex all posts that match given type and blog ID into the specified index.
+
+```shell
+wp algolia reindex <index_name> --type=<post_type> --blog_id=<blog_id>
 ```
 
-If `post_type` is not specified, this wp-cli command will reindex all searchable post types whose `exclude_from_search` is `false`. If `blog_id` is not specified, this wp-cli command will reindex all available sites.
+- `index_name`: name of targeted Algolia index
+- `post_type`: type of posts (e.g. `post`, `page`, `<your_custom_post_type>`)
+- `blog_id`: blog ID in a Multisite environment.
 
-> Note: this does not clear or replace records in the index. To do so, run the `clear` command beforehand.
+If `post_type` is not specified, this wp-cli command will reindex all searchable post types whose `exclude_from_search` is `false`. If `blog_id` is not specified, this wp-cli command will reindex _all_ available sites.
+
+> Algolia will automatically replace existing records with the same `blogID`. However, this command _will not_ automatically clear records with the same `distinct_key`. You'd have to run the `clear` command below and then run this `reindex` command.
+
+<br/>
 
 ### clear
 
-```php
-/**
- * Clear the records from given index and with given filters.
- *
- * @param string  index_name  name of Algolia index
- * @param key     attribute in Algolia records
- * @param value   value mapped to given attribute
- *
- * `wp algolia clear <index_name> [--<key>=<value>, ...]`
- */
+Clear records that match given keys and values from the specified index.
+
+```shell
+wp algolia clear <index_name> [--<key>=<value>, ...]
 ```
+
+- `index_name`: name of targeted Algolia index
+- `key`: attribute label of targeted records
+- `value`: attribute value of targeted records
 
 Specify which subset of records to clear by naming the `key`(s) and their corresponding `value`s. For example, if your records have the `type` key, you can clear all records with `post` as their value like this:
 
@@ -241,25 +254,30 @@ Specify which subset of records to clear by naming the `key`(s) and their corres
 wp algolia clear global_search --type=post
 ```
 
+Not specifying any key value pairs will clear _all records_ in the index.
+
+<br/>
+
 ### push_config
 
-```php
-/**
- * Push Algolia config to index if provided, otherwise
- * send config to all available indices.
- *
- * @param string index_name  name of Algolia index
- * @param bool   settings    reconfigure settings
- * @param bool   synonyms    reconfigure synonyms
- * @param bool   rules       reconfigure rules
- *
- * `wp algolia push_config <index_name> [--settings] [--synonyms] [--rules]`
- */
+Push Algolia confiugration to index if provided, otherwise send configuration to all available indices.
+
+```shell
+wp algolia push_config <index_name> [--settings] [--synonyms] [--rules]
 ```
+
+- `index_name`: name of targeted Algolia index
+- `settings`: push settings?
+- `synonyms`: push synonyms?
+- `rules`: push rules?
+
+<br/>
 
 ## :gift: Examples
 
-Examples for hooking into UpsAlgolia filters are [here](./docs).
+Examples for hooking into UpsAlgolia filters [here](./docs).
+
+## :world_map: Road Map
 
 ## Contributing
 
