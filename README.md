@@ -11,7 +11,7 @@ UpsAlgolia implements the backend administration of Algolia such as post indexin
 - [Meet the Filters](#wave-meet-the-filters)
 - [WP CLI Commands](#checkered_flag-wp-cli-commands)
 - [Examples](#gift-examples)
-- [Road Map](#world-map-road-map)
+- [Road Map](#world_map-road-map)
 
 ## :gear: System Requirements
 
@@ -210,7 +210,7 @@ add_filter('UpsAlgolia\get_algolia_synonyms', 'get_algolia_synonyms');
 function get_algolia_synonyms($index)
 ```
 
-<br/>
+<br />
 
 ## :checkered_flag: WP CLI Commands
 
@@ -234,7 +234,7 @@ If `post_type` is not specified, this wp-cli command will reindex all searchable
 
 > Algolia will automatically replace existing records with the same `blogID`. However, this command _will not_ automatically clear records with the same `distinct_key`. You'd have to run the `clear` command below and then run this `reindex` command.
 
-<br/>
+<br />
 
 ### clear
 
@@ -278,6 +278,12 @@ wp algolia push_config <index_name> [--settings] [--synonyms] [--rules]
 Examples for hooking into UpsAlgolia filters [here](./docs).
 
 ## :world_map: Road Map
+
+This plugin is being actively developed. Here's what we have in our road map.
+
+- [ ] WordPress' admin interface to inject Algolia credentials instead of doing it in code.
+- [ ] WordPress' admin interface to execute WP CLI commands
+- [ ] Host the plugin as a composer package under a private Upstatement registry
 
 ## Contributing
 
