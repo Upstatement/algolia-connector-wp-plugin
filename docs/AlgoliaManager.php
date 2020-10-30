@@ -67,13 +67,7 @@ class AlgoliaManager
     return [
       "attributesForFaceting" => [
         'type',
-        'sub_type',
         'distinct_key',
-        'blogID',
-        'blog_name',
-        'program_months',
-        'subject_areas',
-        'modes'
       ],
 
       "attributeForDistinct" => 'distinct_key'

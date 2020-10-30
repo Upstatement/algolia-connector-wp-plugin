@@ -236,7 +236,7 @@ wp algolia reindex <index_name> --type=<post_type> --blog_id=<blog_id>
 
 If `post_type` is not specified, this wp-cli command will reindex all searchable post types whose `exclude_from_search` is `false`. If `blog_id` is not specified, this wp-cli command will reindex _all_ available sites.
 
-> Algolia will automatically replace existing records with the same `blogID`. However, this command _will not_ automatically clear records with the same `distinct_key`. You'd have to run the `clear` command below and then run this `reindex` command.
+> Algolia will automatically replace existing records with the same `objectID`. However, this command _will not_ automatically clear records with the same `distinct_key`. You'd have to run the `clear` command below and then run this `reindex` command.
 
 <br />
 
