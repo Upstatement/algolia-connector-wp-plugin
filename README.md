@@ -18,7 +18,7 @@ UpsAlgolia implements the backend administration of Algolia such as post indexin
 - [WordPress](https://codex.wordpress.org/Installing_WordPress) (up and running instance)
 - [WP-CLI](https://make.wordpress.org/cli/handbook/installing/)
 
-## :computer: Installation
+## :fire: Quick Start
 
 1. Clone this repository
 
@@ -35,7 +35,42 @@ UpsAlgolia implements the backend administration of Algolia such as post indexin
 
    This will install all dependencies in the `vendor` directory at the root of the plugin.
 
-4. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
+4. Port the example [serializer code](./docs/functions.php) to your theme's `functions.php`. Replace the placeholder `ALGOLIA_APPLICATION_ID` and `ALGOLIA_ADMIN_KEY` with your Algolia instance.
+
+   ```php
+   /**
+    * Get Algolia application id and admin key.
+    *
+    * @return object
+    */
+   function get_algolia_application()
+   {
+     return [
+       "application_id" => 'ALGOLIA_APPLICATION_ID',
+       "admin_key" => 'ALGOLIA_ADMIN_KEY'
+     ];
+   }
+   ```
+
+5. (Optional) Change the targeted index on Algolia.
+
+   ```php
+   /**
+    * Get Algolia index name. All posts
+    * use the same global index.
+    *
+    * @param object $post post
+    *
+    * @return string
+    */
+   function get_index_name($post)
+   {
+     return "global_search";
+   }
+   ```
+
+6. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
+7. Saving posts or pages should index them to your Algolia instance.
 
 ## :wave: Meet the Filters
 
