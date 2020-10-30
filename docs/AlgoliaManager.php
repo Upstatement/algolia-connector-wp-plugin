@@ -98,9 +98,8 @@ class AlgoliaManager
    * Does this post need to be indexed?
    *
    * A post is indexable if
-   * 1. not on local development mode
-   * 2. post status is `publish` or `trash`
-   * 3. post is not on revision or autosave
+   * 1. post status is `publish` or `trash`
+   * 2. post is not on revision or autosave
    *
    * @param $id   id of post
    * @param $post post
@@ -109,10 +108,6 @@ class AlgoliaManager
    */
   public function is_indexable($id, $post)
   {
-    if (getenv('WP_ENV') === 'development') {
-      return false;
-    }
-
     $post_status = $post->post_status;
 
     // Only reindex posts that have been published or trashed
