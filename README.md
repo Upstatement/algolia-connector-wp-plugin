@@ -1,36 +1,25 @@
-# Algolia WordPress Integration
+# Upstatement Algolia Admin
 
-A WordPress plugin derived from [Algolia's WordPress integration guide](https://www.algolia.com/doc/integration/wordpress/getting-started/quick-start/?language=php) with support for [WordPress multisite](https://kinsta.com/blog/wordpress-multisite/#what) and [large record splitting](https://www.algolia.com/doc/guides/sending-and-managing-data/prepare-your-data/how-to/indexing-long-documents/).
+A WordPress Algolia plugin derived from [Algolia's WordPress integration guide](https://www.algolia.com/doc/integration/wordpress/getting-started/quick-start/?language=php).
+
+UpsAlgolia implements the backend administration of Algolia such as post indexing and deletion, and Algolia index management (e.g. clearing records, reindexing records, pushing settings). The plugin exposes various [WordPress filters](https://developer.wordpress.org/plugins/hooks/filters/) to be theme agnostic and compatible with a Multisite environment.
 
 ## Table of Contents
 
-- [Algolia WordPress Integration](#algolia-wordpress-integration)
-  - [Table of Contents](#table-of-contents)
-  - [What's in the Box](#whats-in-the-box)
-  - [System Requirements](#system-requirements)
-  - [Installation](#installation)
-  - [Getting Started](#getting-started)
-    - [Setting up environment variables](#setting-up-environment-variables)
-    - [Accessing environment variables in templates](#accessing-environment-variables-in-templates)
-  - [WP CLI Commands](#wp-cli-commands)
-    - [Indexing records](#indexing-records)
-    - [Get index configuration and print out in JSON format](#get-index-configuration-and-print-out-in-json-format)
-    - [Set index configuration (using local JSON files)](#set-index-configuration-using-local-json-files)
-  - [Contributing](#contributing)
-  - [Code of Conduct](#code-of-conduct)
-  - [About Upstatement](#about-upstatement)
+- [System Requirements](#gear-system-requirements)
+- [Quick Start](#fire-quick-start)
+- [Meet the Filters](#wave-meet-the-filters)
+- [WP CLI Commands](#checkered_flag-wp-cli-commands)
+- [Examples](#gift-examples)
+- [Road Map](#world_map-road-map)
 
-## What's in the Box
-
-This plugin assumes you're indexing all post types in a **global index**. To modify this functionality, refer to the [docs](https://www.algolia.com/doc/integration/wordpress/indexing/importing-content/?language=php#customizing-algolia-index-name) to customize the plugin.
-
-## System Requirements
+## :gear: System Requirements
 
 - PHP 5.3 or newer (version 7.1+ is highly recommended)
 - [WordPress](https://codex.wordpress.org/Installing_WordPress) (up and running instance)
 - [WP-CLI](https://make.wordpress.org/cli/handbook/installing/)
 
-## Installation
+## :fire: Quick Start
 
 1. Clone this repository
 
@@ -47,140 +36,260 @@ This plugin assumes you're indexing all post types in a **global index**. To mod
 
    This will install all dependencies in the `vendor` directory at the root of the plugin.
 
-4. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
+4. Port the example [serializer code](./docs/functions.php) to your theme's `functions.php` OR, if you're using ESK, pull the [AlgoliaManager](./docs/AlgoliaManager.php) into your `Managers` directory and initialize it in `functions.php`. Replace the placeholder `ALGOLIA_APPLICATION_ID` and `ALGOLIA_ADMIN_KEY` with your Algolia application.
 
-## Getting Started
+   ```php
+   /**
+    * Get Algolia application id and admin key.
+    *
+    * @return object
+    */
+   function get_algolia_application()
+   {
+     return [
+       "application_id" => 'ALGOLIA_APPLICATION_ID',
+       "admin_key" => 'ALGOLIA_ADMIN_KEY'
+     ];
+   }
+   ```
 
-In addition to activating the plugin, you'll need to provide your Algolia app's API keys.
+5. (Optional) Change the targeted index on Algolia.
 
-### Setting up environment variables
+   ```php
+   /**
+    * Get Algolia index name. All posts
+    * use the same global index.
+    *
+    * @param object $post post
+    *
+    * @return string
+    */
+   function get_index_name($post)
+   {
+     return "global_search";
+   }
+   ```
 
-At the root of your project (not the plugins directory), add an `.env` file and add the following
+6. Activate (or [Network Activate](https://premium.wpmudev.org/manuals/wpmu-manual-2/network-enabling-regular-plugins/)) the plugin in your WP admin dashboard
+7. Saving posts or pages should index them to your Algolia application.
 
-```shell
-ALGOLIA_APPLICATION_ID=
-ALGOLIA_ADMIN_API_KEY=
-ALGOLIA_SEARCH_ONLY_API_KEY=
-ALGOLIA_INDEX_PREFIX=local
+## :wave: Meet the Filters
+
+### UpsAlgolia\get_algolia_application
+
+Retreives the necessary credentials to an Algolia application. This filter expects the application ID and admin key.
+
+```php
+add_filter('UpsAlgolia\get_algolia_application', 'get_algolia_application');
+
+/**
+ * Get credentials to Algolia application.
+ *
+ * @see https://www.algolia.com/doc/guides/security/api-keys/
+ *
+ * @return object [ "application_id": string, "admin_key": string ]
+ */
+function get_algolia_application()
 ```
 
-The `ALGOLIA_APPLICATION_ID`, `ALGOLIA_ADMIN_API_KEY`, and `ALGOLIA_SEARCH_ONLY_API_KEY` keys can be found in your Algolia dashboard under `API Keys`.
+<br/>
 
-The `ALGOLIA_INDEX_PREFIX` is used to prepend the Algolia index name in order to use separate indices for different environments.
+### UpsAlgolia\get_index_name
 
-- `ALGOLIA_INDEX_PREFIX=local` => `local_wp_global_search`
-- `ALGOLIA_INDEX_PREFIX=staging` => `staging_wp_global_search`
+Retrieve the targeted Algolia index for a given post. You can choose the index based on the post's type or blog id for example if you chose to partition the indices that way. Otherwise, you can return a standard index for all posts.
 
-### Accessing environment variables in templates
+```php
+add_filter('UpsAlgolia\get_index_name', 'get_index_name');
 
-Here at Upstatement, we use [Timber](https://www.upstatement.com/timber/) with all of our WordPress sites. Timber allows us to write our templates in [Twig](https://twig.symfony.com/).
-
-To access these the Algolia environment variables in Twig templates, we've added the `ALGOLIA_APPLICATION_ID`, `ALGOLIA_SEARCH_ONLY_API_KEY`, and `ALGOLIA_INDEX_PREFIX` keys to the Timber context.
-
-In your layout file (usually located at `templates/layouts/base.twig`), before the closing body tag, you can add a `<script>` tag to add an object containing the keys to the `window`.
-
-```html
-<script>
-  window.algolia = {
-    env: {
-      ALGOLIA_APPLICATION_ID: '{{ ALGOLIA_APPLICATION_ID | e("js") }}',
-      ALGOLIA_SEARCH_ONLY_API_KEY: '{{ ALGOLIA_SEARCH_ONLY_API_KEY | e("js") }}',
-      ALGOLIA_INDEX_PREFIX: '{{ ALGOLIA_INDEX_PREFIX | e("js") }}',
-    },
-  };
-</script>
+/**
+ * Get Algolia index name for given post.
+ *
+ * @param object $post post
+ *
+ * @return string
+ */
+function get_index_name($post)
 ```
 
-Then, in your JavaScript:
+<br/>
 
-```js
-const {
-  ALGOLIA_APPLICATION_ID,
-  ALGOLIA_SEARCH_ONLY_API_KEY,
-  ALGOLIA_INDEX_PREFIX,
-} = window.algolia.env;
+### UpsAlgolia\is_indexable
+
+Checks whether given post is to be indexed. If `true`, UpsAlgolia will run the serializer on the post and index it to Algolia. Otherwise, UpsAlgolia will skip the post.
+
+> This filter's default behavior if not overridden is to index posts only if their status is either `publish` or `trash`. Posts that are under revision or autosave are not indexed.
+
+```php
+add_filter('UpsAlgolia\is_indexable', 'is_indexable', 10, 2);
+
+/**
+ * Can or should this post be indexed?
+ *
+ * @param string $id    id of post
+ * @param object $post  post
+ *
+ * @return bool
+ */
+function is_indexable($id, $post)
 ```
 
-## WP CLI Commands
+<br/>
 
-[WP CLI](https://wp-cli.org/) commands are used to easily index our WordPress content in Algolia.
+### UpsAlgolia\\<post_type>\_to_record
+
+Serialize the given post based on its type (e.g. `post`, `page`, `<your_custom_post_type>`). To maintain consistency in naming the serializer function, UpsAlgolia transforms the post type to standard conventions. For example, the plugin will transform dashes (`-`) to underscores (`_`).
+
+```php
+add_filter('UpsAlgolia\<post_type>_to_record', '<post_type>_to_record');
+
+/**
+ * Serialize given post into Algolia records
+ *
+ * @param object $post post
+ *
+ * @return array one or more Algolia records
+ */
+function <post_type>_to_record($post)
+```
+
+The serializer function should return an array of records to support [content splitting](https://www.algolia.com/doc/integration/wordpress/advanced/splitting-large-records/?language=php).
+
+> UpsAlgolia expects the `distinct_key` attribute in every record. It uses the attribute to clear all preexisting records in Algolia when updating a post in WordPress admin to ensure that there are no duplicate records.
+
+<br/>
+
+### UpsAlgolia\get_algolia_settings
+
+Retrieve an object representing [Algolia settings](https://www.algolia.com/doc/api-reference/settings-api-parameters/). This filter will be used by the `push_config` WP CLI command. Add this filter if you need to maintain consistent settings across your indices.
+
+```php
+add_filter('UpsAlgolia\get_algolia_settings', 'get_algolia_settings');
+
+/**
+ * Get Algolia settings
+ * @see https://www.algolia.com/doc/api-reference/settings-api-parameters/
+ *
+ * @param string $index index name
+ *
+ * @return object
+ */
+function get_algolia_settings($index)
+```
+
+<br/>
+
+### UpsAlgolia\get_algolia_rules
+
+Retrieve an object representing [Algolia rules](https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/). This filter will be used by the `push_config` WP CLI command. Add this filter if you need to maintain consistent rules across your indices.
+
+```php
+add_filter('UpsAlgolia\get_algolia_rules', 'get_algolia_rules');
+
+/**
+ * Get Algolia rules.
+ * @see https://www.algolia.com/doc/guides/managing-results/rules/rules-overview/
+ *
+ * @param string $index index name
+ *
+ * @return object
+ */
+function get_algolia_rules($index)
+```
+
+<br/>
+
+### UpsAlgolia\get_algolia_synonyms
+
+Retrieve an object representing [Algolia synonyms](https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/). This filter will be used by the `push_config` WP CLI command. Add this filter if you need to maintain consistent synonyms across your indices.
+
+```php
+add_filter('UpsAlgolia\get_algolia_synonyms', 'get_algolia_synonyms');
+
+/**
+ * Get Algolia synonyms.
+ * @see https://www.algolia.com/doc/guides/managing-results/optimize-search-results/adding-synonyms/
+ *
+ * @param string $index index name
+ *
+ * @return object
+ */
+function get_algolia_synonyms($index)
+```
+
+<br />
+
+## :checkered_flag: WP CLI Commands
+
+[WP CLI](https://wp-cli.org/) commands are used to easily manage our WordPress content in Algolia.
 
 If you're using a [Skela](https://github.com/Upstatement/skela-wp-theme) theme, you can run WP CLI commands via the [`./bin/wp` script](https://github.com/Upstatement/skela-wp-theme/blob/master/bin/wp). Otherwise, omit `./bin/` from the following commands.
 
-### Indexing records
+### reindex
 
-To reindex ALL records in the **global index**, use the following command
-
-```shell
-./bin/wp algolia reindex
-```
-
-To reindex all records with more detailed logs, use the `--verbose` flag
+Reindex all posts that match given type and blog ID into the specified index.
 
 ```shell
-./bin/wp algolia reindex --verbose
+wp algolia reindex <index_name> --type=<post_type> --blog_id=<blog_id>
 ```
 
-To reindex all records for a specific post type, use the `--type=""` argument
+- `index_name`: name of targeted Algolia index
+- `post_type`: type of posts (e.g. `post`, `page`, `<your_custom_post_type>`)
+- `blog_id`: blog ID in a Multisite environment.
+
+If `post_type` is not specified, this wp-cli command will reindex all searchable post types whose `exclude_from_search` is `false`. If `blog_id` is not specified, this wp-cli command will reindex _all_ available sites.
+
+> Algolia will automatically replace existing records with the same `objectID`. However, this command _will not_ automatically clear records with the same `distinct_key`. You'd have to run the `clear` command below and then run this `reindex` command.
+
+<br />
+
+### clear
+
+Clear records that match given keys and values from the specified index.
 
 ```shell
-./bin/wp algolia reindex --type="monkey"
+wp algolia clear <index_name> [--<key>=<value>, ...]
 ```
 
-To reindex all records for a specific index, use the `--index=""` argument
+- `index_name`: name of targeted Algolia index
+- `key`: attribute label of targeted records
+- `value`: attribute value of targeted records
+
+Specify which subset of records to clear by naming the `key`(s) and their corresponding `value`s. For example, if your records have the `type` key, you can clear all records with `post` as their value like this:
 
 ```shell
-./bin/wp algolia reindex --index="your_index_name"
+wp algolia clear global_search --type=post
 ```
 
-### Pull index configuration (outputs to local JSON files)
+Not specifying any key value pairs will clear _all records_ in the index.
 
-The following command will write your Algolia index configuration to a JSON file called `global_search-settings.json` under a new `algolia-json` folder at the root of your project.
+<br/>
+
+### push_config
+
+Push Algolia confiugration to index if provided, otherwise send configuration to all available indices.
 
 ```shell
-./bin/wp algolia pull_config --settings
+wp algolia push_config <index_name> [--settings] [--synonyms] [--rules]
 ```
 
-### Push index configuration (using local JSON files)
+- `index_name`: name of targeted Algolia index
+- `settings`: push settings?
+- `synonyms`: push synonyms?
+- `rules`: push rules?
 
-If you didn't run the `pull_config` command, then at the root of your project, create an `algolia-json` folder and add a file called `global_search-settings.json`. Below is an example JSON file:
+<br/>
 
-```json
-{
-  "minWordSizefor1Typo": 4,
-  "minWordSizefor2Typos": 8,
-  "hitsPerPage": 20,
-  "maxValuesPerFacet": 100,
-  "version": 2,
-  "searchableAttributes": ["unordered(title)", "unordered(content)"],
-  "numericAttributesToIndex": null,
-  "attributesToRetrieve": null,
-  "distinct": true,
-  "unretrievableAttributes": null,
-  "optionalWords": null,
-  "attributesForFaceting": [],
-  "attributesToSnippet": ["content:10", "title:10"],
-  "attributesToHighlight": null,
-  "paginationLimitedTo": 1000,
-  "attributeForDistinct": "distinct_key",
-  "exactOnSingleWordQuery": "attribute",
-  "ranking": ["typo", "geo", "words", "filters", "proximity", "attribute", "exact", "custom"],
-  "customRanking": null,
-  "separatorsToIndex": "",
-  "removeWordsIfNoResults": "none",
-  "queryType": "prefixLast",
-  "highlightPreTag": "<em>",
-  "highlightPostTag": "</em>",
-  "snippetEllipsisText": "...",
-  "alternativesAsExact": ["ignorePlurals", "singleWordSynonym"]
-}
-```
+## :gift: Examples
 
-If you ran `pull_config`, this JSON file should already exist. It is used to set the configuration of your global search index with the `push_config` command:
+Examples for hooking into UpsAlgolia filters [here](./docs).
 
-```shell
-./bin/wp algolia push_config --settings
-```
+## :world_map: Road Map
+
+This plugin is being actively developed. Here's what we have in our road map.
+
+- [ ] WordPress' admin interface to inject Algolia credentials instead of doing it in code.
+- [ ] WordPress' admin interface to execute WP CLI commands
+- [ ] Host the plugin as a composer package under a private Upstatement registry
 
 ## Contributing
 

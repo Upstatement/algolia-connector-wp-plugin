@@ -1,251 +1,232 @@
 <?php
+namespace UpsAlgolia\CLI;
 
-// https://www.algolia.com/doc/integration/wordpress/indexing/importing-content/?language=php
+use UpsAlgolia;
+use UpsAlgolia\Filters;
+use UpsAlgolia\Utils;
+use \Exception as Exception;
 
-if (! (defined('WP_CLI') && WP_CLI)) {
-    return;
+// Ensure that WP_CLI exists
+if (! (defined('WP_CLI') && \WP_CLI)) {
+  return;
 }
 
 /**
- * Gets an array of searchable post types
+ * Query for posts and and serialize them to be saved as records in Algolia
  *
- * @return array
+ * @return void
  */
-function getSearchablePostTypes() {
-    return get_post_types(
-        array(
-            'public' => true,
-            'exclude_from_search' => false
-        )
-    );
+function serialize_records($index, $post_type, $assoc_args) {
+  $paged = 1;
+  $count = 0;
+
+  do {
+    $posts = new \WP_Query([
+      'posts_per_page' => 100,
+      'paged' => $paged,
+      'post_type' => $post_type,
+      'post_status' => 'publish',
+    ]);
+
+    if (!$posts->have_posts()) {
+      break;
+    }
+
+    try {
+      $serialized_records = [];
+
+      // Serialize each post to be saved as Algolia records
+      foreach ($posts->posts as $post) {
+
+        \WP_CLI::line("Serializing [$post->post_type] $post->post_title");
+
+        // Serialize current post
+        $records = UpsAlgolia\serialize_post(\get_the_id(), $post);
+
+        if ($records) {
+          $serialized_records = array_merge($serialized_records, $records);
+          $count++;
+        }
+      }
+
+    } catch (Exception $e) {
+      \WP_CLI::error($e->getMessage());
+    }
+
+    // Save the records in Algolia!
+    // https://www.algolia.com/doc/api-reference/api-methods/save-objects/
+    try {
+      $index->saveObjects($serialized_records);
+
+      \WP_CLI::success("$count $post_type records indexed in Algolia");
+
+    } catch (Exception $e) {
+      \WP_CLI::error($e->getMessage());
+    }
+
+    $paged++;
+
+  } while (true);
 }
 
+
+
 class Algolia_Command {
-    /**
-     * Index posts in Algolia
-     * `wp algolia reindex <options>`
-     *
-     * @return string/bool
-     */
-    public function reindex($args, $assoc_args) {
-        global $algolia;
+  /**
+   * Reindex the records of a post type from given index.
+   *
+   * @param string  index_name  name of Algolia index
+   * @param string  post_type   post type to reindex
+   * @param integer blog_id     blog id to pull posts from
+   *
+   * `wp algolia reindex <index_name> --type=<post_type> --blog_id=<blog_id>`
+   */
+  public function reindex($args, $assoc_args) {
+    global $algolia;
 
-        // Get post type if flag is passed (--type="type")
-        $type = isset($assoc_args['type']) ? $assoc_args['type'] : null;
+    // Get Algolia index and post type arguments
+    $index_name = $args[0] ?? null;
+    $type = $assoc_args['type'] ?? null;
 
-        $searchable_post_types = getSearchablePostTypes();
+    $searchable_post_types = Utils\get_searchable_post_types();
 
-        // Bail early if type arg is not valid
-        if ($type && !in_array($type, $searchable_post_types)) {
-            WP_CLI::error("$type is not a valid post type!");
-            return;
-        }
-
-        $searchable_post_types = $type ? array($type) : $searchable_post_types;
-
-        // Generates index for global index, or passed --index="" arg
-        $index_name = isset($assoc_args['index']) ? $assoc_args['index'] : 'global_search';
-        $canonical_index_name = apply_filters('get_algolia_index_name', $index_name);
-        $index = $algolia->initIndex($canonical_index_name);
-
-        // If reindexing the global index, clear the entire index
-        // https://www.algolia.com/doc/api-reference/api-methods/clear-objects/
-        if (!$type) {
-            WP_CLI::line('Clearing all records from index: '.WP_CLI::colorize("%p$canonical_index_name%n"));
-
-            $index->clearObjects()->wait();
-        }
-
-        // Get all blog IDs in multisite network
-        $all_blog_ids = get_sites(array('fields' => 'ids'));
-
-        // Index posts for each site in the multisite network
-        foreach ($all_blog_ids as $blog_id) {
-            switch_to_blog($blog_id);
-
-            WP_CLI::line("\n".'Indexing posts from '.WP_CLI::colorize("%bBlog $blog_id%n")."\n");
-
-            // Loop through searchable post types and serialize each post
-            foreach ($searchable_post_types as $post_type) {
-                $this->serialize_records($index, $post_type, $assoc_args);
-            }
-
-            restore_current_blog();
-        }
+    // Bail if type arg is not valid
+    if ($type && !in_array($type, $searchable_post_types)) {
+      \WP_CLI::error("$type is not a valid post type!");
+      return;
     }
 
-    /**
-     * Query for posts and and serialize them to be saved as records in Algolia
-     *
-     * @return void
-     */
-    private function serialize_records($index, $post_type, $assoc_args) {
-        $paged = 1;
-        $count = 0;
+    $index = $algolia->initIndex($index_name);
 
-        do {
-            $posts = new WP_Query([
-                'posts_per_page' => 100,
-                'paged' => $paged,
-                'post_type' => $post_type,
-                'post_status' => 'publish',
-            ]);
+    // Get all blog IDs in multisite network
+    $blog_ids = $assoc_args['blog_id'] ? [$assoc_args['blog_id']] : get_sites([ 'fields' => 'ids' ]);
 
-            if (!$posts->have_posts()) {
-                break;
-            }
+    // Index posts for each site in the multisite network
+    foreach ($blog_ids as $blog_id) {
+      switch_to_blog($blog_id);
 
-            try {
-                $records = [];
+      \WP_CLI::line("\n".'Indexing posts from '. \WP_CLI::colorize("%bBlog $blog_id%n")."\n");
 
-                // Serialize each post to be saved as Algolia records
-                foreach ($posts->posts as $post) {
-                    if (isset($assoc_args['verbose'])) {
-                        WP_CLI::line("Serializing [$post->post_type] $post->post_title");
-                    }
+      // Reindex post type only if argument was not specified OR type matches
+      // specified argument
+      foreach ($searchable_post_types as $post_type) {
+        if (is_null($type) || $type === $post_type) {
+          serialize_records($index, $post_type, $assoc_args);
+        }
+      }
 
-                    // Use post type to get corresponding serializer function
-                    $filter_name = $post->post_type.'_to_record';
+      restore_current_blog();
+    }
+  }
 
-                    // Bail early if filter does not exist
-                    if (!has_filter($filter_name)) {
-                        throw new Exception("No filter called $filter_name");
-                    }
+  /**
+   * Clear the records from given index and with given filters.
+   *
+   * @param string  index_name  name of Algolia index
+   * @param key     attribute in Algolia records
+   * @param value   value mapped to given attribute
+   *
+   * `wp algolia clear <index_name> [--<key>=<value>, ...]`
+   */
+  public function clear($args, $assoc_args) {
+    global $algolia;
 
-                    // The serialize function will take care of splitting large records
-                    $split_records = (array) apply_filters($filter_name, $post);
-                    $records = array_merge($records, $split_records);
+    $index_name = $args[0] ?? null;
 
-                    $count++;
-                }
-
-                if (isset($assoc_args['verbose'])) {
-                    WP_CLI::line('Sending batch...');
-                }
-
-            } catch (Exception $e) {
-                WP_CLI::error($e->getMessage());
-            }
-
-            // Save the records in Algolia!
-            // https://www.algolia.com/doc/api-reference/api-methods/save-objects/
-            try {
-                $index->saveObjects($records);
-
-                WP_CLI::success("$count $post_type records indexed in Algolia");
-
-            } catch (Exception $e) {
-                WP_CLI::error($e->getMessage());
-            }
-
-            $paged++;
-
-        } while (true);
+    // Require an index to clear from
+    if (!isset($index_name)) {
+      \WP_CLI::error("Please provide an index to clear");
+      return;
     }
 
-    /**
-     * Get index config and write to local JSON file
-     * `wp algolia pull_config <options>`
-     * 
-     * @return string/bool
-     */
-    public function pull_config($args, $assoc_args) {
-        global $algolia;
+    $index = $algolia->initIndex($index_name);
 
-        // Generates index for global index, or passed --index="" arg
-        $index_name = isset($assoc_args['index']) ? $assoc_args['index'] : 'global_search';
-        $canonical_index_name = apply_filters('get_algolia_index_name', $index_name);
-        $index = $algolia->initIndex($canonical_index_name);
+    // Delete records by filters if given, otherwise clear all
+    if (count($assoc_args)) {
+      $filters = Utils\map_into_filters($assoc_args, 'AND');
+
+      \WP_CLI::line('Clearing records with filters: '
+        . \WP_CLI::colorize("%b$filters%n")
+        . ' from '
+        . \WP_CLI::colorize("%p$index_name%n"));
+
+      $index->deleteBy([ 'filters' => $filters ])->wait();
+
+    } else {
+      \WP_CLI::line('Clearing all records from '
+        . \WP_CLI::colorize("%p$index_name%n"));
+
+      $index->clearObjects()->wait();
+    }
+  }
+
+  /**
+   * Push Algolia config to index if provided, otherwise
+   * send config to all available indices.
+   *
+   * @param string index_name  name of Algolia index
+   * @param bool   settings    reconfigure settings
+   * @param bool   synonyms    reconfigure synonyms
+   * @param bool   rules       reconfigure rules
+   *
+   * `wp algolia push_config <index_name> --settings --synonyms --rules`
+   */
+  public function push_config($args, $assoc_args) {
+    global $algolia;
+
+    $index_name = $args[0] ?? null;
+
+    $indices = [];
+
+    if ($index_name) {
+        $indices = [$index_name];
+    } else {
+        $list_indices = (array) $algolia->listIndices();
+        $indices = array_column($list_indices['items'], 'name');
+    }
+
+
+    foreach ($indices as $idx) {
+        $index = $algolia->initIndex($idx);
 
         // Bail early if index does not exist
         if (!$index->exists()) {
-            WP_CLI::error("Index $canonical_index_name does not exist!");
-            return;
-        }
-
-        // Get index settings if '--settings' flag exists
-        if (isset($assoc_args['settings'])) {
-            $settings = $index->getSettings();
-
-            WP_CLI::log(WP_CLI::colorize('%CPulled settings for index "'.$index->getIndexName().'"%n'));
-            apply_filters('algolia_write_settings', $index_name, json_encode($settings, JSON_PRETTY_PRINT));
-        }
-
-        // Get index synonyms if '--synonyms' flag exists
-        if (isset($assoc_args['synonyms'])) {
-            $synonyms_iterator = $index->browseSynonyms();
-
-            $synonyms = array();
-            foreach ($synonyms_iterator as $synonym) {
-                $synonyms[] = $synonym;
-            }
-
-            WP_CLI::log(WP_CLI::colorize('%CPulled synonyms for index "'.$index->getIndexName().'"%n'));
-            apply_filters('algolia_write_synonyms', $index_name, json_encode($synonyms, JSON_PRETTY_PRINT));
-        }
-
-        // Get index rules if '--rules' flag exists
-        if (isset($assoc_args['rules'])) {
-            $rules_iterator = $index->browseRules();
-
-            $rules = array();
-            foreach ($rules_iterator as $rule) {
-                $rules[] = $rule;
-            }
-
-            WP_CLI::log(WP_CLI::colorize('%CPulled rules for index "'.$index->getIndexName().'"%n'));
-            apply_filters('algolia_write_rules', $index_name, json_encode($rules, JSON_PRETTY_PRINT));
-        }
-    }
-
-    /**
-     * Set index config based on local JSON config file
-     * https://www.algolia.com/doc/integration/wordpress/managing-indices/set-configuration/?language=php
-     * `wp algolia push_config <options>`
-     *
-     * @return string/bool
-     */
-    public function push_config($args, $assoc_args) {
-        global $algolia;
-
-        // Generates index for global index, or passed --index="" arg
-        $index_name = isset($assoc_args['index']) ? $assoc_args['index'] : 'global_search';
-        $canonical_index_name = apply_filters('get_algolia_index_name', $index_name);
-        $index = $algolia->initIndex($canonical_index_name);
-
-        // Bail early if index does not exist
-        if (!$index->exists()) {
-            WP_CLI::error("Index $canonical_index_name does not exist!");
-            return;
+          \WP_CLI::error("Index $idx does not exist!");
+          break;
         }
 
         // Set index settings if '--settings' flag exists
         if (isset($assoc_args['settings'])) {
-            $settings = (array) apply_filters('algolia_get_settings', $index_name, []);
+            $settings = Filters\get_algolia_settings($idx);
+
             if ($settings) {
                 $index->setSettings($settings);
-                WP_CLI::success('Pushed settings to '.$index->getIndexName());
+                \WP_CLI::success('Pushed settings to '. \WP_CLI::colorize("%p$idx%n"));
             }
         }
 
         // Set index synonyms if '--synonyms' flag exists
         if (isset($assoc_args['synonyms'])) {
-            $synonyms = (array)  apply_filters('algolia_get_synonyms', $index_name, []);
+            $synonyms = Filters\get_algolia_synonyms($idx);
+
             if ($synonyms) {
                 $index->replaceAllSynonyms($synonyms);
-                WP_CLI::success('Pushed synonyms to '.$index->getIndexName());
+                \WP_CLI::success('Pushed synonyms to '. \WP_CLI::colorize("%p$idx%n"));
             }
         }
 
         // Set index rules if '--rules' flag exists
         if (isset($assoc_args['rules'])) {
-            $rules = (array) apply_filters('algolia_get_rules', $index_name, []);
+            $rules = Filters\get_algolia_rules($idx);
+
             if ($rules) {
                 $index->replaceAllRules($rules);
-                WP_CLI::success('Pushed rules to '.$index->getIndexName());
+                \WP_CLI::success('Pushed rules to '. \WP_CLI::colorize("%p$idx%n"));
             }
         }
     }
+
+  }
 }
 
-WP_CLI::add_command('algolia', 'Algolia_Command');
+\WP_CLI::add_command('algolia', __NAMESPACE__ . '\\Algolia_Command');
