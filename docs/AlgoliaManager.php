@@ -31,8 +31,8 @@ class AlgoliaManager
     add_filter(
         'timber/context',
         function ($context) {
-          $context['ALGOLIA_APPLICATION_ID'] = getenv('ALGOLIA_APPLICATION_ID');
-          $context['ALGOLIA_SEARCH_ONLY_API_KEY'] = getenv('ALGOLIA_SEARCH_ONLY_API_KEY');
+          $context['ALGOLIA_APPLICATION_ID'] = 'ALGOLIA_APPLICATION_ID';
+          $context['ALGOLIA_SEARCH_ONLY_API_KEY'] = 'ALGOLIA_SEARCH_ONLY_API_KEY';
           $context['ALGOLIA_INDEX_NAME'] = $this->get_index_name();
           $context['BLOG_ID'] = get_current_blog_id();
 
@@ -49,8 +49,8 @@ class AlgoliaManager
   public function get_algolia_application()
   {
     return [
-        "application_id" => getenv('ALGOLIA_APPLICATION_ID'),
-        "admin_key" => getenv('ALGOLIA_ADMIN_KEY')
+        "application_id" => 'ALGOLIA_APPLICATION_ID',
+        "admin_key" => 'ALGOLIA_ADMIN_KEY'
     ];
   }
 
@@ -84,8 +84,7 @@ class AlgoliaManager
    */
   public function get_index_name($post = null)
   {
-    $algolia_env = getenv('ALGOLIA_ENVIRONMENT');
-    return "${algolia_env}_global";
+    return "global_search";
   }
 
   /**

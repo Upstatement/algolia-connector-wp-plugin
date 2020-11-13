@@ -36,7 +36,7 @@ UpsAlgolia implements the backend administration of Algolia such as post indexin
 
    This will install all dependencies in the `vendor` directory at the root of the plugin.
 
-4. Port the example [serializer code](./docs/functions.php) to your theme's `functions.php`. Replace the placeholder `ALGOLIA_APPLICATION_ID` and `ALGOLIA_ADMIN_KEY` with your Algolia application.
+4. Port the example [serializer code](./docs/functions.php) to your theme's `functions.php` OR, if you're using ESK, pull the [AlgoliaManager](./docs/AlgoliaManager.php) into your `Managers` directory and initialize it in `functions.php`. Replace the placeholder `ALGOLIA_APPLICATION_ID` and `ALGOLIA_ADMIN_KEY` with your Algolia application.
 
    ```php
    /**
