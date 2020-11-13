@@ -117,6 +117,8 @@ function get_index_name($post)
 
 Checks whether given post is to be indexed. If `true`, UpsAlgolia will run the serializer on the post and index it to Algolia. Otherwise, UpsAlgolia will skip the post.
 
+> This filter's default behavior if not overridden is to index posts only if their status is either `publish` or `trash`. Posts that are under revision or autosave are not indexed.
+
 ```php
 add_filter('UpsAlgolia\is_indexable', 'is_indexable', 10, 2);
 
