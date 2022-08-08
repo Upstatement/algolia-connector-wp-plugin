@@ -74,7 +74,18 @@ function save_post($id, $post, $update) {
   // Delete posts with matching $ATTRIBUTE_FOR_DISTINCT_KEY
   $algolia_index->deleteBy(['filters' => $filter_string]);
 
-  if ($post_status == 'publish') {
+  if (!Filters\is_indexable($id, $post)) {
+    // Delete post if not indexable anymore
+    $algolia_index->deleteObjects(
+      array_map(
+        function ( $record ) {
+          return $record['objectID'];
+        },
+        $records
+      )
+    );
+  } else if ($post_status == 'publish') {
+    // Otherwise, save on publish!
     $algolia_index->saveObjects($records);
   }
 }
@@ -90,11 +101,6 @@ function save_post($id, $post, $update) {
 function serialize_post($id, $post) {
   // Reformat post_type
   $post_type = Utils\transform_type($post->post_type);
-
-  // Bail if post is not indexable
-  if (!Filters\is_indexable($id, $post)) {
-    return null;
-  }
 
   // Get serializer filter name
   $filter_name = Utils\get_serializer_filter($post_type);
