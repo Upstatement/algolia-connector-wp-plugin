@@ -1,5 +1,5 @@
 {
-  "name": "ups-algolia-admin",
+  "name": "upstatement/ups-algolia-admin",
   "authors": [
     {
       "name": "Upstatement",
@@ -9,5 +9,16 @@
   "description": "Algolia WordPress integration",
   "require": {
     "algolia/algoliasearch-client-php": "^2.7"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.6",
+    "friendsofphp/php-cs-fixer": "^3.3",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7.2",
+    "wp-coding-standards/wpcs": "^2.3"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
   }
 }
