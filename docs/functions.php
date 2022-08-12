@@ -140,7 +140,7 @@ function get_default_record_attributes( $post, $blog_id, $order ) {
 /**
  * Split given text into chunks of 1000 characters
  *
- * @param string $text etxt to split.
+ * @param string $text Text to split.
  *
  * @return array
  */
