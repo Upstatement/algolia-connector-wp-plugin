@@ -2,6 +2,9 @@
 
 Hooks up a connection from WordPress to Algolia.
 
+> [!WARNING]
+> Note that this plugin is still in active development and may have missing features or bugs. It is intended primarily as a starting point for a WordPress to Algolia integration. Use with caution!
+
 ## System Requirements
 
 - PHP 8.2 or newer.
