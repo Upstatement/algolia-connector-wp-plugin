@@ -1,4 +1,4 @@
-# Algolia Connector
+# Algolia Connector WordPress plugin
 
 Hooks up a connection from WordPress to Algolia.
 
