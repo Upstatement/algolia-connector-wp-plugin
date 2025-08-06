@@ -90,7 +90,7 @@ This plugin comes with a few WP CLI commands that can be used to manage an index
 wp algolia reindex
 
 # Reindex just posts and pages.
-wp algolia reindex --type=post,page
+wp algolia reindex --types=post,page
 
 # Reindex a single post.
 wp algolia reindex_single 123
