@@ -1,6 +1,6 @@
 <?php
 /**
- * Collection ot utilities for WordPress posts.
+ * Collection of utilities for WordPress posts.
  *
  * @package AlgoliaConnector
  */

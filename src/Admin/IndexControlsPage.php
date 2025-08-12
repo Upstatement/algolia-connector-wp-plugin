@@ -114,7 +114,7 @@ class IndexControlsPage {
 					set_transient( $this->action . '_success', "Successfully triggered a complete reindex for the `{$this->settings->get_index_name()}` index." );
 					break;
 				case 'clear':
-					$this->algolia->clear_obejcts();
+					$this->algolia->clear_objects();
 					set_transient( $this->action . '_success', 'Successfully triggered a request to clear the entire index.' );
 					break;
 			}

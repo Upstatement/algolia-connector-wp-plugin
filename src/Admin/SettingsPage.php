@@ -126,7 +126,7 @@ class SettingsPage {
 				add_settings_error(
 					$this->option_group,
 					'connection_success',
-					esc_html__( 'Connection to the Algolia servers was succesful!', 'algolia-connector' ),
+					esc_html__( 'Connection to the Algolia servers was successful!', 'algolia-connector' ),
 					'updated'
 				);
 			} else {

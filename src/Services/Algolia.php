@@ -68,7 +68,7 @@ class Algolia {
 	 *
 	 * @return void
 	 */
-	public function clear_obejcts( ?string $index_name = null ): void {
+	public function clear_objects( ?string $index_name = null ): void {
 		if ( ! $this->client ) {
 			return;
 		}
