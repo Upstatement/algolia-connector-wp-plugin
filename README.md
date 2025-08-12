@@ -81,9 +81,9 @@ add_filter( 'algolia_page_to_record', function ( $record ) {
 } );
 ```
 
-## WP CLI
+## WP-CLI
 
-This plugin comes with a few WP CLI commands that can be used to manage an index.
+This plugin comes with a few WP-CLI commands that can be used to manage an index.
 
 ```shell
 # Reindex everything.

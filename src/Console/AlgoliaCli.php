@@ -90,7 +90,7 @@ class AlgoliaCli {
 
 		if ( $clear ) {
 			WP_CLI::log( 'Clearing the index first...' );
-			$this->algolia->clear_obejcts( $index_name );
+			$this->algolia->clear_objects( $index_name );
 		}
 
 		$indexable_post_types = ! empty( $post_types ) ? explode( ',', $post_types ) : $this->theme->get_indexable_post_types();
@@ -179,7 +179,7 @@ class AlgoliaCli {
 			WP_CLI::error( 'You need to either provide an index name or have one specified in your settings.' );
 		}
 
-		$this->algolia->clear_obejcts( $index_name );
+		$this->algolia->clear_objects( $index_name );
 
 		WP_CLI::success( 'Done' );
 	}
